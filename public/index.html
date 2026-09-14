@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>전장연 카드게임 (테스트 클라이언트)</title>
+<style>
+  body { font-family: sans-serif; background:#1b1d22; color:#eee; margin:0; padding:16px; }
+  button { cursor:pointer; border-radius:6px; border:1px solid #555; background:#2a2d35; color:#eee; padding:6px 10px; margin:2px; }
+  button.selected { outline:2px solid #4ea1ff; }
+  input { padding:6px; border-radius:6px; border:1px solid #555; background:#2a2d35; color:#eee; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .card { border:1px solid #444; border-radius:8px; padding:8px; width:150px; background:#22252c; font-size:12px; }
+  .card.enemy { border-color:#a44; }
+  .card.dead { opacity:0.3; }
+  .hpbar { height:6px; background:#444; border-radius:3px; overflow:hidden; margin:4px 0; }
+  .hpbar > div { height:100%; background:#4caf50; }
+  #log { height:150px; overflow-y:auto; background:#111; padding:8px; font-size:12px; border-radius:6px; }
+  h3 { margin:6px 0; }
+  .section { margin-bottom:18px; }
+</style>
+</head>
+<body>
+
+<div id="loginView" class="section">
+  <h2>전장연 카드게임</h2>
+  <input id="nickname" placeholder="닉네임" />
+  <div class="row">
+    <button onclick="createRoom()">방 만들기</button>
+    <input id="joinCode" placeholder="방 코드" style="width:100px" />
+    <button onclick="joinRoom()">방 참가</button>
+    <button onclick="findMatch()">랜덤 매칭</button>
+  </div>
+  <div id="loginStatus"></div>
+</div>
+
+<div id="gameView" style="display:none">
+  <div class="row">
+    <div><b>방 코드:</b> <span id="roomCode"></span></div>
+    <div><b>페이즈:</b> <span id="phase"></span></div>
+    <div><b>턴:</b> <span id="turnInfo"></span></div>
+  </div>
+
+  <div id="placementView" class="section" style="display:none">
+    <h3>배치 단계 - 몹 카드를 필드 슬롯에 배치하세요</h3>
+    <div class="row" id="handArea"></div>
+    <div class="row" id="slotButtons"></div>
+    <button onclick="confirmPlacement()">배치 완료</button>
+  </div>
+
+  <div class="section">
+    <h3>상대 필드 (<span id="oppName"></span>)</h3>
+    <div class="row" id="oppField"></div>
+  </div>
+
+  <div class="section">
+    <h3>내 필드</h3>
+    <div class="row" id="myField"></div>
+  </div>
+
+  <div class="section">
+    <h3>내 손패</h3>
+    <div class="row" id="myHand"></div>
+  </div>
+
+  <div class="section">
+    <button onclick="drawCard()">드로우</button>
+    <span id="turnHint" style="margin-left:8px;color:#aaa"></span>
+  </div>
+
+  <div class="section">
+    <h3>전투 로그</h3>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="client.js"></script>
+</body>
+</html>

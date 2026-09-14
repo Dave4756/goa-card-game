@@ -1,0 +1,17 @@
+{
+  "name": "jeonjangyeon-tcg",
+  "version": "0.1.0",
+  "description": "전장연 카드게임 - 실시간 온라인 대전 서버 (서버 권위형)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}

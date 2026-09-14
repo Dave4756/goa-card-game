@@ -1,0 +1,197 @@
+{
+  "mobs": [
+    {
+      "id": "card_jeonjangyeon",
+      "name": "전장연",
+      "type": "mob",
+      "hp": 200,
+      "trait": null,
+      "skills": [
+        { "id": "s1", "name": "성군인가? 폭군인가?", "desc": "40 데미지", "value": 40 },
+        { "id": "s2", "name": "학교를 왜 다니나? 사랑과 존중을 받기 위해서야", "desc": "자가회복 40", "value": 40 }
+      ]
+    },
+    {
+      "id": "card_inmyeoneo",
+      "name": "인면어 전장연",
+      "type": "mob",
+      "hp": 50,
+      "trait": null,
+      "skills": [
+        { "id": "s1", "name": "파닥거리기", "desc": "10 데미지", "value": 10 },
+        { "id": "s2", "name": "회피", "desc": "자신에게 공격 스킬 사용 시 동전을 던져 앞면이면 무효" }
+      ]
+    },
+    {
+      "id": "card_garados",
+      "name": "갸라도스 전장연",
+      "type": "mob",
+      "hp": 400,
+      "evolvesFrom": "card_inmyeoneo",
+      "trait": null,
+      "skills": [
+        { "id": "s1", "name": "파도 일으키기", "desc": "50 데미지, 상대 필드 전체에게 피해", "value": 50 },
+        { "id": "s2", "name": "하이드로펌프", "desc": "200 데미지", "value": 200 }
+      ]
+    },
+    {
+      "id": "card_jammanbo",
+      "name": "잠만보 전장연",
+      "type": "mob",
+      "hp": 240,
+      "trait": null,
+      "skills": [
+        { "id": "s1", "name": "누르기", "desc": "60 데미지", "value": 60 },
+        { "id": "s2", "name": "하품", "desc": "상대를 수면 상태로 만든다" }
+      ]
+    },
+    {
+      "id": "card_meka",
+      "name": "메카 전장연",
+      "type": "mob",
+      "hp": 200,
+      "trait": { "id": "china_battery", "name": "중국산 베터리", "desc": "자신의 [과충전] 1스택당 받는 데미지 +10" },
+      "skills": [
+        { "id": "s1", "name": "충전하기", "desc": "자신에게 [과충전] 1스택 부여" },
+        { "id": "s2", "name": "방전", "desc": "80 데미지, [과충전] 1스택당 40 추가", "value": 80 }
+      ]
+    },
+    {
+      "id": "card_heoreonaerin",
+      "name": "머리 흘러내린 전장연",
+      "type": "mob",
+      "hp": 300,
+      "trait": { "id": "hair_redirect", "name": "흘러내린 머리카락", "desc": "양옆 아군이 입는 피해의 절반을 자신이 대신 받는다" },
+      "skills": [
+        { "id": "s1", "name": "넌 탈모 안걸릴거 같지?", "desc": "동전 앞면 시 상대에게 [혼란] 부여" },
+        { "id": "s2", "name": "머리 다시 올리기", "desc": "40 데미지", "value": 40 }
+      ]
+    },
+    {
+      "id": "card_jongyeonchu",
+      "name": "종연츄",
+      "type": "mob",
+      "hp": 140,
+      "trait": { "id": "electric_rat", "name": "전기쥐", "desc": "매턴 양옆 아군과 자신에게 [과충전] 1스택 부여" },
+      "skills": [
+        { "id": "s1", "name": "일렉트로필드", "desc": "아군 필드에 [전기장] 설치" },
+        { "id": "s2", "name": "백만볼트", "desc": "60 데미지 + 아군 필드 전체 [과충전]스택 합*20 (전기장 있으면 2배)", "value": 60 }
+      ]
+    },
+    {
+      "id": "card_pokjujok",
+      "name": "폭주족 전장연",
+      "type": "mob",
+      "hp": 220,
+      "trait": { "id": "best_driver", "name": "베스트 드라이버", "desc": "매턴 자신에게 [과열된 연료] 1스택 부여" },
+      "skills": [
+        { "id": "s1", "name": "시동 걸기", "desc": "30 데미지, 자신의 주는 피해 영구 +40, [과열된 연료]*15 만큼 회복(최대 150)", "value": 30 },
+        { "id": "s2", "name": "폭주한판", "desc": "60 데미지 + [과열된 연료]당 20 추가", "value": 60 }
+      ]
+    },
+    {
+      "id": "card_saurus",
+      "name": "전장연 사우루스",
+      "type": "mob",
+      "hp": 400,
+      "trait": null,
+      "skills": [
+        { "id": "s1", "name": "포효", "desc": "20 데미지, 상대의 다음 공격 절반으로 감소", "value": 20 },
+        { "id": "s2", "name": "물기", "desc": "100 데미지", "value": 100 }
+      ]
+    },
+    {
+      "id": "card_jongbaragi",
+      "name": "종바라기",
+      "type": "mob",
+      "hp": 100,
+      "trait": { "id": "photosynthesis", "name": "광합성", "desc": "매턴 자신의 hp 50 회복, 매턴 회복량/최대체력 +10씩 누적" },
+      "skills": [
+        { "id": "s1", "name": "줄기로 때리기", "desc": "30 데미지", "value": 30 },
+        { "id": "s2", "name": "솔라빔 준비", "desc": "2턴간 스킬 사용 불가, 이후 상대 필드 최저 hp에게 [솔라빔] 300 시전" }
+      ],
+      "specialSkill": { "id": "solar_beam", "name": "솔라빔", "value": 300 }
+    },
+    {
+      "id": "card_gisa",
+      "name": "기사 전장연",
+      "type": "mob",
+      "hp": 230,
+      "trait": { "id": "chivalry", "name": "기사도 정신", "desc": "자신의 필드에 몹이 1장뿐일 때 주는 피해 x2, 받는 피해 절반" },
+      "skills": [
+        { "id": "s1", "name": "칼로 배기", "desc": "60 데미지", "value": 60 }
+      ]
+    },
+    {
+      "id": "card_gakseong",
+      "name": "각성 리즈시절 전장연",
+      "type": "mob",
+      "hp": 523,
+      "hidden": true,
+      "trait": { "id": "acting", "name": "연기력", "desc": "주는 피해의 30%를 회복" },
+      "skills": [
+        { "id": "s1", "name": "세 가지 힘이 느껴지나?", "desc": "상대 필드 전체에게 60 데미지", "value": 60 },
+        { "id": "s2", "name": "내가 시발 부광고의 전장연이다!!!", "desc": "180 데미지", "value": 180 }
+      ]
+    },
+    {
+      "id": "card_jaeonjaehae",
+      "name": "자연재해??",
+      "type": "mob",
+      "hp": 523,
+      "deckLimit": 1,
+      "trait": { "id": "predation", "name": "포식", "desc": "자신의 필드 위 몹 카드 1장을 포식(트레쉬)함, 성공 시 hp 100 회복" },
+      "skills": [
+        { "id": "s1", "name": "대머리가 온다", "desc": "200 데미지", "value": 200 },
+        { "id": "s2", "name": "시발 도망쳐!", "desc": "양측 필드 전체 몹에게 영구 50 데미지, 사용 시 이 카드 외 회복 불가" }
+      ]
+    },
+    {
+      "id": "card_running_man",
+      "name": "런닝맨 전장연",
+      "type": "mob",
+      "hp": 230,
+      "trait": { "id": "run_dont_walk", "name": "난 걷지 않고 뛰어", "desc": "같은 스킬 연속 사용 시마다 데미지/회복 +20" },
+      "skills": [
+        { "id": "s1", "name": "내가 군인 시절 삽질 장인이었어!", "desc": "20 데미지, 직전 턴 동일 스킬 사용 시 +40", "value": 20 },
+        { "id": "s2", "name": "늙어서 힘들어....", "desc": "자가회복 50, 직전 턴 동일 스킬 사용 시 +40", "value": 50 }
+      ]
+    },
+    {
+      "id": "card_taekwondo",
+      "name": "태권도 수련생 전장연",
+      "type": "mob",
+      "hp": 300,
+      "trait": { "id": "yellow_belt", "name": "나 태권도 노란띠야!", "desc": "받는 피해 -50%" },
+      "skills": [
+        { "id": "s1", "name": "정권지르기", "desc": "30 데미지", "value": 30 },
+        { "id": "s2", "name": "뒤돌려차기", "desc": "80 데미지, 동전 뒷면 시 자신에게 [혼란]", "value": 80 }
+      ]
+    },
+    {
+      "id": "card_menhera",
+      "name": "멘헤라 전장연",
+      "type": "mob",
+      "hp": 200,
+      "trait": { "id": "self_study", "name": "아침 시간에 자습하자니까~~", "desc": "공격 시 입힌 피해의 30%를 회복" },
+      "skills": [
+        { "id": "s1", "name": "친한척 하기", "desc": "50 데미지, 대상의 다음 주는 피해 -50%", "value": 50 }
+      ]
+    }
+  ],
+  "items": [
+    { "id": "item_innaeryeok", "name": "인내력", "type": "item_attach", "desc": "받는 피해 -15" },
+    { "id": "item_hakseupryeok", "name": "학습력", "type": "item_attach", "desc": "주는 피해 +10" },
+    { "id": "item_sahoechinhwaryeok", "name": "사회 친화력", "type": "item_attach", "desc": "매턴 hp 10 회복" },
+    { "id": "item_ppa", "name": "뽑아", "type": "item_consume", "desc": "덱에서 몹 카드 1장 랜덤 드로우" },
+    { "id": "item_chaekgabang", "name": "책가방", "type": "item_consume", "desc": "덱에서 랜덤 2장 드로우" },
+    { "id": "item_ai_geumji", "name": "생성형 ai 사용 금지!", "type": "item_consume", "desc": "상대 몹 카드 1장의 부착 아이템을 트레쉬로 이동" },
+    { "id": "item_ya_i_sibal", "name": "야 이 시발", "type": "item_consume", "desc": "자신의 몹 카드 1장의 모든 상태이상 해제" },
+    { "id": "item_pos_neg", "name": "positive negative", "type": "item_consume", "desc": "대상 1장에 동전 던지기: 앞면 hp 100 회복, 뒷면 100 피해" },
+    { "id": "item_4jo", "name": "4조 c 나와~", "type": "item_consume", "desc": "자신의 필드 몹 카드 1장을 패로 되돌림" },
+    { "id": "item_chilpan", "name": "이 칠판 지우개를 봐", "type": "item_consume", "desc": "자신의 몹 카드 1장을 상대의 다음 공격 대상으로 고정" },
+    { "id": "item_hyperfocus", "name": "하이퍼포커스", "type": "item_consume", "desc": "자신의 몹 카드 1장, 다음 받는 피해를 절반으로" },
+    { "id": "item_gisup", "name": "기습 수행평가", "type": "item_consume", "desc": "상대 필드 전체 몹을 [혼란] 상태로" },
+    { "id": "item_ahejang", "name": "아헤장연", "type": "item_consume", "desc": "효과 없음 (그냥 기분이 좆같다)" }
+  ]
+}
