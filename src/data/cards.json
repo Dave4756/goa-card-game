@@ -31,12 +31,13 @@
       "hp": 400,
       "image": "super_fish.png",
       "evolvesFrom": "card_inmyeoneo",
-      "trait": null,
+      "trait": { "id": "evolution", "name": "진화", "desc": "배치한 지 1턴 지난 인면어 전장연에서 진화" },
       "skills": [
         { "id": "s1", "name": "파도 일으키기", "desc": "50 데미지, 상대 필드 전체에게 피해", "value": 50, "targetType": "none", "motion": "water" },
         { "id": "s2", "name": "하이드로펌프", "desc": "200 데미지", "value": 200, "targetType": "enemy", "motion": "water" }
       ]
     },
+
     {
       "id": "card_jammanbo",
       "name": "잠만보 전장연",

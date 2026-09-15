@@ -1377,18 +1377,35 @@ function renderHand(state) {
     });
 
     if (c.type === 'mob') {
-      const b = document.createElement('button');
-      b.textContent = '필드로 배치';
-      b.onclick = (e) => { e.stopPropagation(); selectForPlacement(c.instanceId); };
-      div.appendChild(b);
+      // 진화 카드는 직접 배치 불가 → "필드로 배치" 버튼 숨기고 진화 버튼만 표시
+      if (c.evolvesFrom) {
+        // 필드에 진화 base 카드가 있는지 + turnsOnField >= 1 인지 체크
+        const baseOnField = lastState && lastState.me && lastState.me.field.find(f => f && f.defId === c.evolvesFrom);
+        const canEvolve = baseOnField && (baseOnField.turnsOnField || 0) >= 1;
 
-      if (c.defId === 'card_garados') {
         const eb = document.createElement('button');
-        eb.textContent = '진화시키기';
+        eb.textContent = canEvolve ? '🌊 진화시키기' : '진화 (1턴 대기 필요)';
+        eb.disabled = !canEvolve;
+        eb.title = canEvolve
+          ? `[${baseOnField.name}]을(를) ${c.name}(으)로 진화`
+          : '인면어 전장연을 먼저 배치하고 1턴이 지나야 진화할 수 있습니다.';
+        eb.style.background = canEvolve ? 'linear-gradient(135deg,#0ea5e9,#0369a1)' : '#4b5563';
         eb.onclick = (e) => { e.stopPropagation(); tryEvolve(c.instanceId, c.defId); };
         div.appendChild(eb);
+
+        // 진화 조건 안내 태그
+        const tag = document.createElement('span');
+        tag.textContent = canEvolve ? '✅ 진화 가능' : `⏳ ${baseOnField ? baseOnField.turnsOnField + '/1턴' : '인면어 필요'}`;
+        tag.style.cssText = `display:block;font-size:10px;margin-top:4px;color:${canEvolve ? '#34d399' : '#f87171'};font-weight:700;`;
+        div.appendChild(tag);
+      } else {
+        const b = document.createElement('button');
+        b.textContent = '필드로 배치';
+        b.onclick = (e) => { e.stopPropagation(); selectForPlacement(c.instanceId); };
+        div.appendChild(b);
       }
     } else if (c.type === 'item_attach') {
+
       const b = document.createElement('button');
       b.textContent = '장착 대상 선택';
       b.onclick = (e) => {

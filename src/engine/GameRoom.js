@@ -151,6 +151,11 @@ class GameRoom {
     const opponent = this.getOpponent(player);
     player.drawnThisTurn = false;
 
+    // 필드의 각 몹 카드의 필드 경과 턴 수 증가
+    for (const card of player.field) {
+      if (card && card.alive) card.turnsOnField = (card.turnsOnField || 0) + 1;
+    }
+
     // 매 턴 시작 시 자동 1장 드로우
     const drawn = player.draw(1);
     if (drawn.length > 0) {
@@ -166,6 +171,8 @@ class GameRoom {
     this.blockedThisTurn = keywordHandler.onTurnStart(this, player, opponent);
     this.checkWin();
   }
+
+
 
   skipTurn(player) {
     if (this.phase !== PHASE.BATTLE) return { ok: false, error: '전투 페이즈가 아닙니다.' };
@@ -478,11 +485,18 @@ class GameRoom {
     const card = player.findInHand(handInstanceId);
     if (!card || card.type !== 'mob') return { ok: false, error: '몹 카드가 아닙니다.' };
     if (slot < 0 || slot > 2 || player.field[slot]) return { ok: false, error: '해당 슬롯에 배치할 수 없습니다.' };
+
+    // 진화 카드는 직접 배치 불가 — 반드시 evolveCard로만 필드에 나올 수 있음
+    if (card.def.evolvesFrom) {
+      return { ok: false, error: `[${card.name}]은(는) 직접 배치할 수 없습니다. 진화 특성 카드입니다.` };
+    }
+
     player.removeFromHand(handInstanceId);
     player.field[slot] = card;
     this.pushEvent('log', { message: `${player.nickname}이(가) ${card.name}을(를) 필드에 배치했습니다.` });
     return { ok: true, events: this.flushEvents() };
   }
+
 
   returnFieldCardToHand(player, instanceId) {
     const card = player.removeFromField(instanceId);
@@ -499,6 +513,11 @@ class GameRoom {
     const targetPlayer = targetOwner === 'self' ? player : this.getOpponent(player);
     const target = targetPlayer.findOnField(targetInstanceId);
     if (!target) return { ok: false, error: '대상 카드를 찾을 수 없습니다.' };
+
+    // 같은 종류의 아이템 중복 부착 방지
+    const alreadyAttached = target.attachedItems.some(a => a.defId === item.defId);
+    if (alreadyAttached) return { ok: false, error: `이미 [${item.name}]이(가) 장착되어 있습니다.` };
+
     player.removeFromHand(handInstanceId);
     target.attachedItems.push(item);
 
@@ -542,11 +561,17 @@ class GameRoom {
     if (!base) return { ok: false, error: '진화 대상을 찾을 수 없습니다.' };
     if (evoCard.def.evolvesFrom !== base.defId) return { ok: false, error: '진화 조건이 맞지 않습니다.' };
 
+    // 진화 조건: 1턴 이상 필드에 있어야 함
+    if ((base.turnsOnField || 0) < 1) {
+      return { ok: false, error: `[${base.name}]을(를) 배치한 다음 턴부터 진화할 수 있습니다. (현재 ${base.turnsOnField || 0}턴 경과)` };
+    }
+
     player.removeFromHand(handInstanceId);
     const slot = player.fieldSlotOf(base.instanceId);
     const hpRatio = base.hp / base.maxHp;
     evoCard.hp = Math.round(evoCard.maxHp * hpRatio) || evoCard.maxHp;
     evoCard.attachedItems = base.attachedItems;
+    evoCard.turnsOnField = base.turnsOnField; // 진화 후에도 필드 경과 턴 유지
     player.field[slot] = evoCard;
     player.trash.push(base);
 
@@ -554,6 +579,8 @@ class GameRoom {
     this.pushEvent('log', { message: `🌊 ${base.name}이(가) ${evoCard.name}(으)로 진화했습니다!` });
     return { ok: true, events: this.flushEvents() };
   }
+
+
 
   useConsumable(player, handInstanceId, payload) {
     const item = player.findInHand(handInstanceId);
@@ -630,8 +657,11 @@ class GameRoom {
         permanentDamageBonus: card.permanentDamageBonus,
         flags: { solarBeamPending: card.flags.solarBeamPending, skillLockTurns: card.flags.skillLockTurns },
         blocked: this.isCardActionBlocked(card.instanceId),
+        turnsOnField: card.turnsOnField || 0,
+        evolvesFrom: card.def.evolvesFrom || null,
       };
     }
+
     return { ...base, desc: card.def.desc };
   }
 

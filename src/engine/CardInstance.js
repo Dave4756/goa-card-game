@@ -19,6 +19,7 @@ class CardInstance {
       this.stacks = {};         // { [STACK]: number }
       this.attachedItems = [];  // CardInstance[] (item_attach)
       this.permanentDamageBonus = 0; // 폭주족 시동걸기 영구 강화 등
+      this.turnsOnField = 0;    // 필드에 배치된 후 경과한 턴 수 (진화 조건 등에 사용)
       this.flags = {
         lastSkillUsed: null,     // 직전 자신 턴에 사용한 스킬 id (런닝맨용)
         skillLockTurns: 0,       // 종바라기 솔라빔 준비 중 락
@@ -28,6 +29,7 @@ class CardInstance {
       };
       this.alive = true;
     }
+
   }
 
   isMob() {
