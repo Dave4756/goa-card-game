@@ -34,11 +34,9 @@ function onTurnStart(room, player, opponent) {
       }
     }
 
-    // 수면 상태: 이번 턴 스킬 사용 불가, 소모 후 해제
+    // 수면 상태는 턴 시작 시 자동 해제하지 않고 상태를 유지하며, 스킬 시전 시 동전 던지기로 깨어남 판정
     if (card.hasStatus(STATUS.SLEEP)) {
-      blocked.add(card.instanceId);
-      card.removeStatus(STATUS.SLEEP);
-      room.pushEvent('log', { message: `${card.name}은(는) 잠들어 있어 행동할 수 없습니다.` });
+      room.pushEvent('log', { message: `💤 ${card.name}은(는) 현재 수면 상태입니다.` });
     }
 
     // 트레잇: 전기쥐 (종연츄) - 자신 & 양옆 아군에게 과충전 1스택
@@ -59,6 +57,13 @@ function onTurnStart(room, player, opponent) {
       card.maxHp += 10;
       room.heal(card, healAmount, { silent: false });
       card.flags.photosynthesisBoost += 10;
+    }
+
+    // 부착 아이템: 사회 친화력 - 매턴 hp 10 회복
+    for (const item of card.attachedItems || []) {
+      if (item.defId === 'item_sahoechinhwaryeok') {
+        room.heal(card, 10);
+      }
     }
 
     // 종바라기 솔라빔 준비 카운트다운
@@ -82,6 +87,17 @@ function fireSolarBeam(room, player, opponent, sourceCard) {
   if (enemies.length === 0) return;
   let lowest = enemies[0];
   for (const e of enemies) if (e.hp < lowest.hp) lowest = e;
+  room.pushEvent('skillCast', {
+    sourceCardId: sourceCard.instanceId,
+    sourceCardName: sourceCard.name,
+    targetCardId: lowest.instanceId,
+    targetCardName: lowest.name,
+    skillId: 'solar_beam',
+    skillName: '솔라빔',
+    defId: 'card_jongbaragi',
+    targetType: 'enemy',
+    isAoE: false,
+  });
   room.pushEvent('log', { message: `${sourceCard.name}의 [솔라빔]이 ${lowest.name}에게 작렬합니다!` });
   room.dealDamage({
     sourcePlayer: player,

@@ -11,6 +11,7 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/image', express.static(path.join(__dirname, 'image')));
 app.get('/api/cards', (req, res) => res.json(cardData));
 app.get('/healthz', (req, res) => res.send('ok'));
 
@@ -36,15 +37,15 @@ function sendResult(socket, room, result) {
 }
 
 io.on('connection', (socket) => {
-  socket.on('createRoom', ({ nickname }) => {
-    const room = manager.createRoom(socket.id, nickname);
+  socket.on('createRoom', ({ nickname, customDeck }) => {
+    const room = manager.createRoom(socket.id, nickname, customDeck);
     socket.join(room.code);
     socket.emit('roomJoined', { code: room.code });
     broadcastState(room);
   });
 
-  socket.on('joinRoom', ({ code, nickname }) => {
-    const res = manager.joinRoom((code || '').toUpperCase(), socket.id, nickname);
+  socket.on('joinRoom', ({ code, nickname, customDeck }) => {
+    const res = manager.joinRoom((code || '').toUpperCase(), socket.id, nickname, customDeck);
     if (res.error) return socket.emit('errorMsg', { error: res.error });
     const room = res.room;
     socket.join(room.code);
@@ -58,8 +59,8 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('findMatch', ({ nickname }) => {
-    const res = manager.enqueueForMatch(socket.id, nickname);
+  socket.on('findMatch', ({ nickname, customDeck }) => {
+    const res = manager.enqueueForMatch(socket.id, nickname, customDeck);
     if (!res.matched) {
       socket.emit('waitingForOpponent');
       return;
@@ -102,6 +103,8 @@ io.on('connection', (socket) => {
   );
 
   socket.on('drawCard', withRoom((room, player) => room.drawCard(player)));
+
+  socket.on('skipTurn', withRoom((room, player) => room.skipTurn(player)));
 
   socket.on(
     'useSkill',

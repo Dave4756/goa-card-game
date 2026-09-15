@@ -32,6 +32,24 @@ function buildStandardDeck() {
   return deck;
 }
 
+function buildCustomDeck(cardIds) {
+  if (!Array.isArray(cardIds) || cardIds.length !== 20) {
+    return buildStandardDeck();
+  }
+  const counts = {};
+  const deck = [];
+  for (const id of cardIds) {
+    const def = ALL_DEFS[id];
+    if (!def || def.hidden) return buildStandardDeck();
+    counts[id] = (counts[id] || 0) + 1;
+    const maxLimit = def.deckLimit || 2;
+    if (counts[id] > maxLimit) return buildStandardDeck();
+    deck.push(new CardInstance(def));
+  }
+  if (!deck.some((c) => c.type === 'mob')) return buildStandardDeck();
+  return deck;
+}
+
 class GameRoom {
   constructor(code) {
     this.code = code;
@@ -45,8 +63,8 @@ class GameRoom {
     this.winnerIndex = null;
   }
 
-  addPlayer(socketId, nickname) {
-    const p = new Player(socketId, nickname);
+  addPlayer(socketId, nickname, customDeck = null) {
+    const p = new Player(socketId, nickname, customDeck);
     p.fieldKeyword = null;
     this.players.push(p);
     return p;
@@ -84,7 +102,7 @@ class GameRoom {
   // ---------- 게임 시작 ----------
   startMatch() {
     for (const p of this.players) {
-      p.deck = buildStandardDeck();
+      p.deck = buildCustomDeck(p.customDeck);
       p.shuffleDeck();
       // 최소 1장 이상의 몹 카드를 포함해서 3장 드로우
       let hand = [];
@@ -107,12 +125,20 @@ class GameRoom {
   }
 
   beginBattlePhase() {
-    const heads = this.coinFlip('선공 결정');
+    const heads = Math.random() < 0.5;
     this.turnPlayerIndex = heads ? 0 : 1;
     this.turnNumber = 1;
     this.phase = PHASE.BATTLE;
     const first = this.players[this.turnPlayerIndex];
+    this.pushEvent('coinFlip', {
+      reason: '선공 결정',
+      result: heads ? 'heads' : 'tails',
+      isInitiative: true,
+      firstPlayerSocketId: first.socketId,
+      firstPlayerNickname: first.nickname,
+    });
     this.pushEvent('log', { message: `${first.nickname}이(가) 선공입니다.` });
+    this.pushEvent('turnChange', { nickname: first.nickname, turnNumber: 1, playerIndex: this.turnPlayerIndex, socketId: first.socketId });
     this.runTurnStartHooks();
   }
 
@@ -124,14 +150,37 @@ class GameRoom {
     const player = this.currentPlayer();
     const opponent = this.getOpponent(player);
     player.drawnThisTurn = false;
+
+    // 매 턴 시작 시 자동 1장 드로우
+    const drawn = player.draw(1);
+    if (drawn.length > 0) {
+      player.drawnThisTurn = true;
+      this.pushEvent('cardDrawn', {
+        playerSocketId: player.socketId,
+        nickname: player.nickname,
+        count: drawn.length,
+      });
+      this.pushEvent('log', { message: `🎴 ${player.nickname}이(가) 카드를 1장 드로우했습니다.` });
+    }
+
     this.blockedThisTurn = keywordHandler.onTurnStart(this, player, opponent);
     this.checkWin();
+  }
+
+  skipTurn(player) {
+    if (this.phase !== PHASE.BATTLE) return { ok: false, error: '전투 페이즈가 아닙니다.' };
+    if (player !== this.currentPlayer()) return { ok: false, error: '당신의 턴이 아닙니다.' };
+    this.pushEvent('log', { message: `⏭️ ${player.nickname}이(가) 턴을 넘겼습니다.` });
+    this.endTurn();
+    return { ok: true, events: this.flushEvents() };
   }
 
   endTurn() {
     if (this.phase !== PHASE.BATTLE) return;
     this.turnPlayerIndex = 1 - this.turnPlayerIndex;
     this.turnNumber += 1;
+    const next = this.currentPlayer();
+    this.pushEvent('turnChange', { nickname: next.nickname, turnNumber: this.turnNumber, playerIndex: this.turnPlayerIndex, socketId: next.socketId });
     this.runTurnStartHooks();
   }
 
@@ -144,6 +193,10 @@ class GameRoom {
     // 공격자 보정 (영구 강화, 다음 공격 절반 디버프)
     if (sourceCard && !skipSourceBonuses) {
       amount += sourceCard.permanentDamageBonus || 0;
+      // 부착 아이템: 학습력 - 주는 피해 +10
+      for (const item of sourceCard.attachedItems || []) {
+        if (item.defId === 'item_hakseupryeok') amount += 10;
+      }
       if (sourceCard.hasStatus(STATUS.HALVE_NEXT_DAMAGE_DEALT)) {
         amount = Math.floor(amount / 2);
         sourceCard.removeStatus(STATUS.HALVE_NEXT_DAMAGE_DEALT);
@@ -156,6 +209,10 @@ class GameRoom {
     }
 
     // 방어자 보정
+    // 부착 아이템: 인내력 - 받는 피해 -15
+    for (const item of targetCard.attachedItems || []) {
+      if (item.defId === 'item_innaeryeok') amount -= 15;
+    }
     // 하이퍼포커스: 다음 받는 피해 절반
     if (targetCard.hasStatus(STATUS.HALVE_NEXT_DAMAGE_TAKEN)) {
       amount = Math.floor(amount / 2);
@@ -200,6 +257,14 @@ class GameRoom {
       if (tid === 'acting' || tid === 'self_study') {
         const healAmount = Math.floor(amount * 0.3);
         if (healAmount > 0) this.heal(sourceCard, healAmount);
+      }
+    }
+
+    // 과열된 연료 보유 카드: 데미지 시 대상에게 [화상] 부여
+    if (sourceCard && sourceCard.getStack && sourceCard.getStack(STACK.HOT_FUEL) > 0 && targetCard.alive) {
+      if (!targetCard.hasStatus(STATUS.BURN)) {
+        targetCard.addStatus(STATUS.BURN, {});
+        this.pushEvent('log', { message: `${targetCard.name}이(가) [화상]에 걸렸습니다!` });
       }
     }
 
@@ -258,6 +323,7 @@ class GameRoom {
           this.pushEvent('log', { message: `${card.name}이(가) 쓰러졌습니다.` });
         }
       }
+      this.checkWin();
     }
   }
 
@@ -298,6 +364,19 @@ class GameRoom {
 
     const opponent = this.getOpponent(player);
 
+    // 수면 판정: 잠들어 있는 카드는 동전 던져서 앞면이면 깨어나서 스킬 시전, 뒷면이면 수면 유지 및 턴 종료!
+    if (card.hasStatus(STATUS.SLEEP)) {
+      const awake = this.coinFlip(`${card.name} 잠듦 해제 판정`);
+      if (awake) {
+        card.removeStatus(STATUS.SLEEP);
+        this.pushEvent('log', { message: `✨ ${card.name}이(가) 잠에서 깨어났습니다!` });
+      } else {
+        this.pushEvent('log', { message: `💤 ${card.name}은(는) 여전히 깊은 잠에 빠져 있어 스킬을 시전하지 못했습니다.` });
+        this.endTurn();
+        return { ok: true, events: this.flushEvents() };
+      }
+    }
+
     // 혼란 판정 (모든 능동 스킬 사용 시 적용)
     const confusion = keywordHandler.checkConfusion(this, card);
     if (confusion.cancelled) {
@@ -310,7 +389,55 @@ class GameRoom {
       return { ok: false, error: '사용할 수 없는 스킬입니다.' };
     }
 
-    const target = this._resolveTarget(player, opponent, targetInfo);
+    // 스킬 targetType 검증
+    const skillDef = card.def.skills ? card.def.skills.find(s => s.id === skillId) : null;
+    if (skillDef && skillDef.targetType === 'passive') {
+      return { ok: false, error: '패시브 스킬은 직접 사용할 수 없습니다.' };
+    }
+    if (skillDef && skillDef.targetType === 'enemy') {
+      if (targetInfo && targetInfo.owner === 'self') {
+        return { ok: false, error: '공격 스킬은 상대 카드만 대상으로 지정할 수 있습니다.' };
+      }
+    }
+
+    let target = this._resolveTarget(player, opponent, targetInfo);
+
+    // 상대 1명 대상 공격 스킬인데 타겟이 없는 경우, 상대 필드에 몹이 1마리뿐이면 자동 지정
+    if (skillDef && skillDef.targetType === 'enemy' && !target) {
+      const oppMobs = opponent.fieldMobs();
+      if (oppMobs.length === 1) {
+        target = oppMobs[0];
+      } else if (oppMobs.length > 1) {
+        return { ok: false, error: '공격할 상대 카드를 지정해주세요.' };
+      }
+    }
+
+    // 인면어 회피 판정: 대상이 인면어이고 공격 스킬일 경우 동전 던져서 앞면이면 무효
+    if (target && target.defId === 'card_inmyeoneo' && target.alive) {
+      const heads = this.coinFlip(`${target.name} 회피 판정`);
+      if (heads) {
+        this.pushEvent('log', { message: `${target.name}이(가) 공격을 회피했습니다!` });
+        card.flags.lastSkillUsedPrev = card.flags.lastSkillUsed;
+        card.flags.lastSkillUsed = skillId;
+        this.endTurn();
+        return { ok: true, events: this.flushEvents() };
+      }
+    }
+
+    // 스킬 시전 애니메이션 이벤트 발행 (양측 동기화)
+    this.pushEvent('skillCast', {
+      sourceCardId: card.instanceId,
+      sourceCardName: card.name,
+      targetCardId: target ? target.instanceId : null,
+      targetCardName: target ? target.name : null,
+      skillId,
+      skillName: skillDef ? skillDef.name : skillId,
+      defId: card.defId,
+      motion: skillDef ? (skillDef.motion || 'slash') : 'slash',
+      targetType: skillDef ? skillDef.targetType : 'none',
+      isAoE: (skillId === 's1' && ['card_garados', 'card_gakseong'].includes(card.defId)) || (skillId === 's2' && card.defId === 'card_jaeonjaehae'),
+    });
+
     handlerGroup[skillId]({ room: this, player, opponent, card, target, targetInfo });
 
     card.flags.lastSkillUsedPrev = card.flags.lastSkillUsed;
@@ -374,6 +501,17 @@ class GameRoom {
     if (!target) return { ok: false, error: '대상 카드를 찾을 수 없습니다.' };
     player.removeFromHand(handInstanceId);
     target.attachedItems.push(item);
+
+    this.pushEvent('itemUsed', {
+      userSocketId: player.socketId,
+      userNickname: player.nickname,
+      itemDefId: item.defId,
+      itemName: item.name,
+      itemImage: item.def.image,
+      itemType: item.type,
+      targetInstanceId: target.instanceId,
+      targetName: target.name,
+    });
     this.pushEvent('log', { message: `${target.name}에게 [${item.name}]을(를) 장착했습니다.` });
 
     this._checkAwakenEvolution(targetPlayer, target);
@@ -421,10 +559,28 @@ class GameRoom {
     const item = player.findInHand(handInstanceId);
     if (!item || item.type !== 'item_consume') return { ok: false, error: '소모형 아이템이 아닙니다.' };
     const opponent = this.getOpponent(player);
+
+    const targetCard = payload && payload.targetInstanceId
+      ? (payload.targetOwner === 'self' ? player : opponent).findOnField(payload.targetInstanceId)
+      : null;
+
+    // 아이템 연출 팝업을 효과 발동(동전 모션 등) 전에 먼저 발행
+    this.pushEvent('itemUsed', {
+      userSocketId: player.socketId,
+      userNickname: player.nickname,
+      itemDefId: item.defId,
+      itemName: item.name,
+      itemImage: item.def.image,
+      itemType: item.type,
+      targetInstanceId: targetCard ? targetCard.instanceId : null,
+      targetName: targetCard ? targetCard.name : null,
+    });
+
     const result = require('./skills').consumables[item.defId]?.({ room: this, player, opponent, payload });
     if (result && result.error) return { ok: false, error: result.error };
     player.removeFromHand(handInstanceId);
     player.trash.push(item);
+
     this.checkWin();
     return { ok: true, events: this.flushEvents() };
   }
@@ -435,11 +591,15 @@ class GameRoom {
     if (player !== this.currentPlayer()) return { ok: false, error: '당신의 턴이 아닙니다.' };
     const target = player.findOnField(sacrificeInstanceId);
     if (!target || target.instanceId === card.instanceId) return { ok: false, error: '포식할 대상이 올바르지 않습니다.' };
+    for (const item of target.attachedItems || []) {
+      player.trash.push(item);
+    }
+    target.attachedItems = [];
     player.removeFromField(target.instanceId);
     player.trash.push(target);
     this.heal(card, 100);
     this.pushEvent('log', { message: `${card.name}이(가) ${target.name}을(를) 포식하고 hp 100을 회복했습니다.` });
-    this.endTurn();
+    this.checkWin();
     return { ok: true, events: this.flushEvents() };
   }
 
@@ -454,12 +614,14 @@ class GameRoom {
       defId: card.defId,
       name: card.name,
       type: card.type,
+      image: card.def.image || null,
     };
     if (card.type === 'mob') {
       return {
         ...base,
         hp: card.hp,
         maxHp: card.maxHp,
+        alive: card.alive !== false && card.hp > 0,
         trait: card.def.trait,
         skills: card.def.skills,
         statuses: card.statuses,

@@ -1,7 +1,8 @@
 class Player {
-  constructor(socketId, nickname) {
+  constructor(socketId, nickname, customDeck = null) {
     this.socketId = socketId;
     this.nickname = nickname || '이름없음';
+    this.customDeck = customDeck;
     this.deck = [];   // CardInstance[]
     this.hand = [];   // CardInstance[]
     this.field = [null, null, null]; // 최대 3슬롯, CardInstance | null

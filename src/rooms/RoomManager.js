@@ -14,36 +14,36 @@ class RoomManager {
     this.socketToRoom = new Map(); // socketId -> code
   }
 
-  createRoom(socketId, nickname) {
+  createRoom(socketId, nickname, customDeck = null) {
     let code;
     do {
       code = genCode();
     } while (this.rooms.has(code));
     const room = new GameRoom(code);
-    room.addPlayer(socketId, nickname);
+    room.addPlayer(socketId, nickname, customDeck);
     this.rooms.set(code, room);
     this.socketToRoom.set(socketId, code);
     return room;
   }
 
-  joinRoom(code, socketId, nickname) {
+  joinRoom(code, socketId, nickname, customDeck = null) {
     const room = this.rooms.get(code);
     if (!room) return { error: '존재하지 않는 방 코드입니다.' };
     if (room.isFull()) return { error: '이미 인원이 가득 찬 방입니다.' };
-    room.addPlayer(socketId, nickname);
+    room.addPlayer(socketId, nickname, customDeck);
     this.socketToRoom.set(socketId, code);
     return { room };
   }
 
-  enqueueForMatch(socketId, nickname) {
+  enqueueForMatch(socketId, nickname, customDeck = null) {
     // 대기열에 이미 있는 상대가 있으면 즉시 매칭
     if (this.matchQueue.length > 0) {
       const opponent = this.matchQueue.shift();
-      const room = this.createRoom(opponent.socketId, opponent.nickname);
-      this.joinRoom(room.code, socketId, nickname);
+      const room = this.createRoom(opponent.socketId, opponent.nickname, opponent.customDeck);
+      this.joinRoom(room.code, socketId, nickname, customDeck);
       return { room, matched: true };
     }
-    this.matchQueue.push({ socketId, nickname });
+    this.matchQueue.push({ socketId, nickname, customDeck });
     return { matched: false };
   }
 
