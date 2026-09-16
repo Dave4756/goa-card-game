@@ -29,7 +29,7 @@
       "name": "갸라도스 전장연",
       "type": "mob",
       "hp": 400,
-      "image": "super_fish.png",
+      "image": "63b4e8ee-653e-48f3-981a-e1495d909c42.jpeg",
       "evolvesFrom": "card_inmyeoneo",
       "trait": { "id": "evolution", "name": "진화", "desc": "배치한 지 1턴 지난 인면어 전장연에서 진화" },
       "skills": [
@@ -55,7 +55,7 @@
       "name": "메카 전장연",
       "type": "mob",
       "hp": 200,
-      "image": "dummy.png",
+      "image": "robat.png",
       "trait": { "id": "china_battery", "name": "중국산 베터리", "desc": "자신의 [과충전] 1스택당 받는 데미지 +10" },
       "skills": [
         { "id": "s1", "name": "충전하기", "desc": "자신에게 [과충전] 1스택 부여", "targetType": "none", "motion": "lightning" },
@@ -67,7 +67,7 @@
       "name": "머리 흘러내린 전장연",
       "type": "mob",
       "hp": 300,
-      "image": "dummy.png",
+      "image": "hair.png",
       "trait": { "id": "hair_redirect", "name": "흘러내린 머리카락", "desc": "양옆 아군이 입는 피해의 절반을 자신이 대신 받는다" },
       "skills": [
         { "id": "s1", "name": "넌 탈모 안걸릴거 같지?", "desc": "동전 앞면 시 상대에게 [혼란] 부여", "targetType": "enemy", "motion": "curse" },
@@ -91,7 +91,7 @@
       "name": "폭주족 전장연",
       "type": "mob",
       "hp": 220,
-      "image": "dummy.png",
+      "image": "fireman.png",
       "trait": { "id": "best_driver", "name": "베스트 드라이버", "desc": "매턴 자신에게 [과열된 연료] 1스택 부여" },
       "skills": [
         { "id": "s1", "name": "시동 걸기", "desc": "30 데미지, 자신의 주는 피해 영구 +40, [과열된 연료]*15 만큼 회복(최대 150)", "value": 30, "targetType": "enemy", "motion": "fire" },
@@ -103,7 +103,7 @@
       "name": "전장연 사우루스",
       "type": "mob",
       "hp": 400,
-      "image": "dummy.png",
+      "image": "gong.png",
       "trait": null,
       "skills": [
         { "id": "s1", "name": "포효", "desc": "20 데미지, 상대의 다음 공격 절반으로 감소", "value": 20, "targetType": "enemy", "motion": "earthquake" },
@@ -115,7 +115,7 @@
       "name": "종바라기",
       "type": "mob",
       "hp": 100,
-      "image": "dummy.png",
+      "image": "sunflower.png",
       "trait": { "id": "photosynthesis", "name": "광합성", "desc": "매턴 자신의 hp 50 회복, 매턴 회복량/최대체력 +10씩 누적" },
       "skills": [
         { "id": "s1", "name": "줄기로 때리기", "desc": "30 데미지", "value": 30, "targetType": "enemy", "motion": "slash" },
@@ -128,7 +128,7 @@
       "name": "기사 전장연",
       "type": "mob",
       "hp": 230,
-      "image": "dummy.png",
+      "image": "knight.png",
       "trait": { "id": "chivalry", "name": "기사도 정신", "desc": "자신의 필드에 몹이 1장뿐일 때 주는 피해 x2, 받는 피해 절반" },
       "skills": [
         { "id": "s1", "name": "칼로 배기", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "slash" }
@@ -152,7 +152,7 @@
       "name": "자연재해??",
       "type": "mob",
       "hp": 523,
-      "image": "63b4e8ee-653e-48f3-981a-e1495d909c42.jpeg",
+      "image": "monster.png",
       "deckLimit": 1,
       "trait": { "id": "predation", "name": "포식", "desc": "자신의 필드 위 몹 카드 1장을 포식(트레쉬)함, 성공 시 hp 100 회복 (턴 소모 없음)" },
       "skills": [
@@ -165,7 +165,7 @@
       "name": "런닝맨 전장연",
       "type": "mob",
       "hp": 230,
-      "image": "dummy.png",
+      "image": "runingman.png",
       "trait": { "id": "run_dont_walk", "name": "난 걷지 않고 뛰어", "desc": "같은 스킬 연속 사용 시마다 데미지/회복 +20" },
       "skills": [
         { "id": "s1", "name": "내가 군인 시절 삽질 장인이었어!", "desc": "20 데미지, 직전 턴 동일 스킬 사용 시 +40", "value": 20, "targetType": "enemy", "motion": "slash" },
@@ -177,7 +177,7 @@
       "name": "태권도 수련생 전장연",
       "type": "mob",
       "hp": 300,
-      "image": "dummy.png",
+      "image": "korean.png",
       "trait": { "id": "yellow_belt", "name": "나 태권도 노란띠야!", "desc": "받는 피해 -50%" },
       "skills": [
         { "id": "s1", "name": "정권지르기", "desc": "30 데미지", "value": 30, "targetType": "enemy", "motion": "tackle" },
@@ -189,7 +189,7 @@
       "name": "멘헤라 전장연",
       "type": "mob",
       "hp": 200,
-      "image": "siba.png",
+      "image": "manhera.png",
       "trait": { "id": "self_study", "name": "아침 시간에 자습하자니까~~", "desc": "공격 시 입힌 피해의 30%를 회복" },
       "skills": [
         { "id": "s1", "name": "친한척 하기", "desc": "50 데미지, 대상의 다음 주는 피해 -50%", "value": 50, "targetType": "enemy", "motion": "curse" }
