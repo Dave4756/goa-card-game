@@ -31,7 +31,7 @@
       "hp": 400,
       "image": "63b4e8ee-653e-48f3-981a-e1495d909c42.jpeg",
       "evolvesFrom": "card_inmyeoneo",
-      "trait": { "id": "evolution", "name": "진화", "desc": "배치한 지 1턴 지난 인면어 전장연에서 진화" },
+      "trait": { "id": "evolution", "name": "진화", "desc": "배치한 지 2턴 지난 인면어 전장연에서 진화" },
       "skills": [
         { "id": "s1", "name": "파도 일으키기", "desc": "50 데미지, 상대 필드 전체에게 피해", "value": 50, "targetType": "none", "motion": "water" },
         { "id": "s2", "name": "하이드로펌프", "desc": "200 데미지", "value": 200, "targetType": "enemy", "motion": "water" }

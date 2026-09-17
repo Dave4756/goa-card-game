@@ -10,6 +10,7 @@ class Player {
     this.drawnThisTurn = false;
     this.placementReady = false;
     this.noHealExceptCardId = null; // 자연재해 스킬2 사용 시 전역 제한
+    this.usedItemDefsThisTurn = []; // 이번 턴에 사용한 아이템 defId 목록 (동일 아이템 턴당 1회 제한용)
   }
 
   shuffleDeck() {

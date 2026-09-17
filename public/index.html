@@ -32,6 +32,14 @@
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+  img {
+    -webkit-user-drag: none;
+    user-drag: none;
   }
 
   body::before {
@@ -1536,6 +1544,16 @@
     </div>
   </div>
 
+</div>
+
+<!-- ===== 대전 종료 결과 모달 오버레이 ===== -->
+<div id="gameOverModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); backdrop-filter:blur(10px); z-index:9999; align-items:center; justify-content:center; flex-direction:column;">
+  <div id="gameOverBox" style="background:rgba(26,31,46,0.95); border:3px solid var(--primary); border-radius:24px; padding:40px 50px; text-align:center; box-shadow:0 0 80px rgba(245,158,11,0.5); max-width:480px; width:90%;">
+    <div id="gameOverIcon" style="font-size:72px; margin-bottom:12px; filter:drop-shadow(0 0 20px rgba(251,191,36,0.8));">🏆</div>
+    <h1 id="gameOverTitle" style="font-size:38px; font-weight:900; color:#fbbf24; text-shadow:0 0 20px rgba(251,191,36,0.6); margin-bottom:12px;">VICTORY!</h1>
+    <p id="gameOverSub" style="font-size:16px; color:#e5e7eb; line-height:1.6; margin-bottom:28px;">상대 필드의 몹이 모두 소멸하였습니다.</p>
+    <button class="btn-sm btn-primary" style="padding:14px 32px; font-size:18px; font-weight:800; border-radius:12px; cursor:pointer;" onclick="location.reload()">🎮 로비로 돌아가기</button>
+  </div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>

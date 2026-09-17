@@ -206,6 +206,9 @@ async function runTest() {
 
   // 7. 아이템 사용 시 itemUsed 브로드캐스트 이벤트 테스트
   let itemUsedEvents = [];
+  p1.clientSide.on('events', (evs) => {
+    evs.filter(e => e.type === 'itemUsed').forEach(e => itemUsedEvents.push(e));
+  });
   p2.clientSide.on('events', (evs) => {
     evs.filter(e => e.type === 'itemUsed').forEach(e => itemUsedEvents.push(e));
   });

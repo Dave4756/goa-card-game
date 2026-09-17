@@ -348,7 +348,39 @@ socket.on('errorMsg', ({ error }) => {
   log(`❌ 오류: ${error}`);
 });
 socket.on('opponentLeft', () => alert('상대방이 게임을 나갔습니다.'));
-socket.on('gameOverFinal', ({ winner }) => log(`🏆 === 게임 종료: ${winner} 승리! ===`));
+socket.on('gameOverFinal', ({ winner }) => {
+  log(`🏆 === 게임 종료: ${winner} 승리! ===`);
+  showGameOverModal(winner);
+});
+
+function showGameOverModal(winnerNickname) {
+  const modal = document.getElementById('gameOverModal');
+  const icon = document.getElementById('gameOverIcon');
+  const title = document.getElementById('gameOverTitle');
+  const sub = document.getElementById('gameOverSub');
+  const box = document.getElementById('gameOverBox');
+  if (!modal || !title || !sub) return;
+
+  const isMeWinner = lastState && lastState.me && lastState.me.nickname === winnerNickname;
+
+  if (isMeWinner) {
+    icon.textContent = '🏆';
+    title.textContent = 'VICTORY!';
+    title.style.color = '#fbbf24';
+    sub.textContent = `축하합니다! ${winnerNickname} 님이 대전에서 승리하셨습니다.`;
+    box.style.borderColor = '#fbbf24';
+    box.style.boxShadow = '0 0 80px rgba(245, 158, 11, 0.6)';
+  } else {
+    icon.textContent = '💀';
+    title.textContent = 'DEFEAT';
+    title.style.color = '#ef4444';
+    sub.textContent = `${winnerNickname} 님이 승리하셨습니다. 다음 기회에 다시 도전하세요!`;
+    box.style.borderColor = '#ef4444';
+    box.style.boxShadow = '0 0 80px rgba(239, 68, 68, 0.6)';
+  }
+
+  modal.style.display = 'flex';
+}
 
 // ===== 애니메이션 이벤트 큐 (아이템 팝업 -> 코인 -> 진화 순서 보장) =====
 let _eventQueue = [];
@@ -1376,40 +1408,44 @@ function renderHand(state) {
       dragData = null;
     });
 
+    const isMyTurn = lastState && (lastState.phase === 'placement' || lastState.isMyTurn);
+
     if (c.type === 'mob') {
       // 진화 카드는 직접 배치 불가 → "필드로 배치" 버튼 숨기고 진화 버튼만 표시
       if (c.evolvesFrom) {
-        // 필드에 진화 base 카드가 있는지 + turnsOnField >= 1 인지 체크
+        // 필드에 진화 base 카드가 있는지 + turnsOnField >= 2 인지 체크
         const baseOnField = lastState && lastState.me && lastState.me.field.find(f => f && f.defId === c.evolvesFrom);
-        const canEvolve = baseOnField && (baseOnField.turnsOnField || 0) >= 1;
+        const canEvolve = baseOnField && (baseOnField.turnsOnField || 0) >= 2;
 
         const eb = document.createElement('button');
-        eb.textContent = canEvolve ? '🌊 진화시키기' : '진화 (1턴 대기 필요)';
-        eb.disabled = !canEvolve;
+        eb.textContent = canEvolve ? '🌊 진화시키기' : '진화 (2턴 대기 필요)';
+        eb.disabled = !canEvolve || !isMyTurn;
         eb.title = canEvolve
           ? `[${baseOnField.name}]을(를) ${c.name}(으)로 진화`
-          : '인면어 전장연을 먼저 배치하고 1턴이 지나야 진화할 수 있습니다.';
-        eb.style.background = canEvolve ? 'linear-gradient(135deg,#0ea5e9,#0369a1)' : '#4b5563';
+          : '인면어 전장연을 먼저 배치하고 2턴이 지나야 진화할 수 있습니다.';
+        eb.style.background = (canEvolve && isMyTurn) ? 'linear-gradient(135deg,#0ea5e9,#0369a1)' : '#4b5563';
         eb.onclick = (e) => { e.stopPropagation(); tryEvolve(c.instanceId, c.defId); };
         div.appendChild(eb);
 
         // 진화 조건 안내 태그
         const tag = document.createElement('span');
-        tag.textContent = canEvolve ? '✅ 진화 가능' : `⏳ ${baseOnField ? baseOnField.turnsOnField + '/1턴' : '인면어 필요'}`;
+        tag.textContent = canEvolve ? '✅ 진화 가능' : `⏳ ${baseOnField ? baseOnField.turnsOnField + '/2턴' : '인면어 필요'}`;
         tag.style.cssText = `display:block;font-size:10px;margin-top:4px;color:${canEvolve ? '#34d399' : '#f87171'};font-weight:700;`;
         div.appendChild(tag);
       } else {
         const b = document.createElement('button');
         b.textContent = '필드로 배치';
+        b.disabled = !isMyTurn;
         b.onclick = (e) => { e.stopPropagation(); selectForPlacement(c.instanceId); };
         div.appendChild(b);
       }
     } else if (c.type === 'item_attach') {
-
       const b = document.createElement('button');
       b.textContent = '장착 대상 선택';
+      b.disabled = !isMyTurn;
       b.onclick = (e) => {
         e.stopPropagation();
+        if (!isMyTurn) return alert('상대방의 턴입니다. 내 턴에만 카드를 아이템을 사용할 수 있습니다.');
         pendingAttach = { handInstanceId: c.instanceId, cardName: c.name };
         log(`🔗 [${c.name}] 장착할 아군 카드를 클릭하세요.`);
         render(lastState);
@@ -1418,7 +1454,12 @@ function renderHand(state) {
     } else if (c.type === 'item_consume') {
       const b = document.createElement('button');
       b.textContent = '사용';
-      b.onclick = (e) => { e.stopPropagation(); useConsumable(c.instanceId, c.defId, c.name); };
+      b.disabled = !isMyTurn;
+      b.onclick = (e) => {
+        e.stopPropagation();
+        if (!isMyTurn) return alert('상대방의 턴입니다. 내 턴에만 아이템을 사용할 수 있습니다.');
+        useConsumable(c.instanceId, c.defId, c.name);
+      };
       div.appendChild(b);
     }
     el.appendChild(div);
@@ -1502,6 +1543,10 @@ function cardImage(c) {
 // ===== 드래그 앤 드롭 핸들러 =====
 function handleDropOnSlot(slotIndex) {
   if (!dragData) return;
+  if (lastState && lastState.phase === 'battle' && !lastState.isMyTurn) {
+    alert('상대방의 턴입니다. 내 턴에만 카드를 배치할 수 있습니다.');
+    return;
+  }
   if (dragData.type === 'mob') {
     socket.emit('placeMob', { handInstanceId: dragData.instanceId, slot: slotIndex });
     placingCard = null;
@@ -1510,6 +1555,10 @@ function handleDropOnSlot(slotIndex) {
 
 function handleDrop(targetCard, targetOwner, slotIndex) {
   if (!dragData) return;
+  if (lastState && lastState.phase === 'battle' && !lastState.isMyTurn) {
+    alert('상대방의 턴입니다. 내 턴에만 아이템을 사용하거나 진화할 수 있습니다.');
+    return;
+  }
 
   if (dragData.type === 'item_attach') {
     if (targetOwner !== 'self') {
@@ -1527,6 +1576,10 @@ function handleDrop(targetCard, targetOwner, slotIndex) {
 
 // ===== 배치 단계 =====
 function selectForPlacement(handInstanceId) {
+  if (lastState && lastState.phase === 'battle' && !lastState.isMyTurn) {
+    alert('상대방의 턴입니다. 내 턴에만 몹 카드를 배치할 수 있습니다.');
+    return;
+  }
   placingCard = handInstanceId;
   renderPlacement(lastState);
 }
@@ -1596,6 +1649,10 @@ function drawCard() { socket.emit('drawCard'); }
 
 // ===== 스킬 선택 및 사용 (공격 스킬 버그 수정 적용) =====
 function selectSkill(cardInstanceId, skillId) {
+  if (lastState && lastState.phase === 'battle' && !lastState.isMyTurn) {
+    alert('상대방의 턴입니다. 내 턴에만 스킬을 사용할 수 있습니다.');
+    return;
+  }
   const card = lastState.me.field.find(c => c && c.instanceId === cardInstanceId);
   if (!card) return;
   const sk = (card.skills || []).find(s => s.id === skillId);
@@ -1628,20 +1685,16 @@ function selectSkill(cardInstanceId, skillId) {
   }
 }
 
-// ===== 자연재해 포식 (특성 패시브 발동) =====
+// ===== 자연재해 포식 (특성 패시브 자동 발동 안내) =====
 function startPredation(cardInstanceId) {
-  const otherAliveMobs = lastState.me.field.filter(c => c && c.instanceId !== cardInstanceId && (c.alive !== false) && c.hp > 0);
-  if (otherAliveMobs.length === 0) {
-    alert('포식할 다른 아군 몹 카드가 필드에 없습니다.');
-    return;
-  }
-
-  predationState = { cardInstanceId };
-  log('🍽️ 포식할 아군 몹 카드를 선택하세요. (턴이 소모되지 않습니다)');
-  render(lastState);
+  alert('자연재해 특성 [포식]은 턴 시작 시 아군 몹 1마리를 대상으로 자동 발동합니다.');
 }
 
 function tryEvolve(handInstanceId, defId) {
+  if (lastState && lastState.phase === 'battle' && !lastState.isMyTurn) {
+    alert('상대방의 턴입니다. 내 턴에만 진화할 수 있습니다.');
+    return;
+  }
   const evolvesFrom = defId === 'card_garados' ? 'card_inmyeoneo' : null;
   if (!evolvesFrom) return;
   const target = lastState.me.field.find(c => c && c.defId === evolvesFrom);

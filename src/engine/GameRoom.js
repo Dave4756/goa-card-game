@@ -150,10 +150,21 @@ class GameRoom {
     const player = this.currentPlayer();
     const opponent = this.getOpponent(player);
     player.drawnThisTurn = false;
+    player.usedItemDefsThisTurn = [];
 
     // 필드의 각 몹 카드의 필드 경과 턴 수 증가
     for (const card of player.field) {
       if (card && card.alive) card.turnsOnField = (card.turnsOnField || 0) + 1;
+    }
+
+    // 자연재해 특성 [포식]: 매 턴 시작 시 다른 아군 몹 1마리 자동 포식
+    const jaeonjaehaeCard = player.field.find(c => c && c.alive && c.defId === 'card_jaeonjaehae');
+    if (jaeonjaehaeCard) {
+      const preyCandidates = player.field.filter(c => c && c.alive && c.instanceId !== jaeonjaehaeCard.instanceId);
+      if (preyCandidates.length > 0) {
+        const target = preyCandidates[Math.floor(Math.random() * preyCandidates.length)];
+        this._executePredation(player, jaeonjaehaeCard, target);
+      }
     }
 
     // 매 턴 시작 시 자동 1장 드로우
@@ -482,6 +493,9 @@ class GameRoom {
   }
 
   placeMobFromHand(player, handInstanceId, slot) {
+    if (this.phase === PHASE.BATTLE && player !== this.currentPlayer()) {
+      return { ok: false, error: '당신의 턴이 아닙니다.' };
+    }
     const card = player.findInHand(handInstanceId);
     if (!card || card.type !== 'mob') return { ok: false, error: '몹 카드가 아닙니다.' };
     if (slot < 0 || slot > 2 || player.field[slot]) return { ok: false, error: '해당 슬롯에 배치할 수 없습니다.' };
@@ -497,7 +511,6 @@ class GameRoom {
     return { ok: true, events: this.flushEvents() };
   }
 
-
   returnFieldCardToHand(player, instanceId) {
     const card = player.removeFromField(instanceId);
     if (!card) return { ok: false, error: '카드를 찾을 수 없습니다.' };
@@ -508,8 +521,16 @@ class GameRoom {
   }
 
   attachItem(player, handInstanceId, targetOwner, targetInstanceId) {
+    if (this.phase !== PHASE.BATTLE) return { ok: false, error: '전투 페이즈가 아닙니다.' };
+    if (player !== this.currentPlayer()) return { ok: false, error: '당신의 턴이 아닙니다.' };
+
     const item = player.findInHand(handInstanceId);
     if (!item || item.type !== 'item_attach') return { ok: false, error: '부착형 아이템이 아닙니다.' };
+
+    if (player.usedItemDefsThisTurn && player.usedItemDefsThisTurn.includes(item.defId)) {
+      return { ok: false, error: `[${item.name}]은(는) 이번 턴에 이미 사용하셨습니다. (같은 종류의 아이템은 턴당 1회만 사용 가능)` };
+    }
+
     const targetPlayer = targetOwner === 'self' ? player : this.getOpponent(player);
     const target = targetPlayer.findOnField(targetInstanceId);
     if (!target) return { ok: false, error: '대상 카드를 찾을 수 없습니다.' };
@@ -520,6 +541,8 @@ class GameRoom {
 
     player.removeFromHand(handInstanceId);
     target.attachedItems.push(item);
+    if (!player.usedItemDefsThisTurn) player.usedItemDefsThisTurn = [];
+    player.usedItemDefsThisTurn.push(item.defId);
 
     this.pushEvent('itemUsed', {
       userSocketId: player.socketId,
@@ -555,15 +578,18 @@ class GameRoom {
   }
 
   evolveCard(player, handInstanceId, targetFieldInstanceId) {
+    if (this.phase !== PHASE.BATTLE) return { ok: false, error: '전투 페이즈가 아닙니다.' };
+    if (player !== this.currentPlayer()) return { ok: false, error: '당신의 턴이 아닙니다.' };
+
     const evoCard = player.findInHand(handInstanceId);
     if (!evoCard) return { ok: false, error: '카드를 찾을 수 없습니다.' };
     const base = player.findOnField(targetFieldInstanceId);
     if (!base) return { ok: false, error: '진화 대상을 찾을 수 없습니다.' };
     if (evoCard.def.evolvesFrom !== base.defId) return { ok: false, error: '진화 조건이 맞지 않습니다.' };
 
-    // 진화 조건: 1턴 이상 필드에 있어야 함
-    if ((base.turnsOnField || 0) < 1) {
-      return { ok: false, error: `[${base.name}]을(를) 배치한 다음 턴부터 진화할 수 있습니다. (현재 ${base.turnsOnField || 0}턴 경과)` };
+    // 진화 조건: 2턴 이상 필드에 있어야 함
+    if ((base.turnsOnField || 0) < 2) {
+      return { ok: false, error: `[${base.name}]을(를) 배치한 다음 2턴이 지난 후부터 진화할 수 있습니다. (현재 ${base.turnsOnField || 0}/2턴 경과)` };
     }
 
     player.removeFromHand(handInstanceId);
@@ -580,13 +606,18 @@ class GameRoom {
     return { ok: true, events: this.flushEvents() };
   }
 
-
-
   useConsumable(player, handInstanceId, payload) {
+    if (this.phase !== PHASE.BATTLE) return { ok: false, error: '전투 페이즈가 아닙니다.' };
+    if (player !== this.currentPlayer()) return { ok: false, error: '당신의 턴이 아닙니다.' };
+
     const item = player.findInHand(handInstanceId);
     if (!item || item.type !== 'item_consume') return { ok: false, error: '소모형 아이템이 아닙니다.' };
-    const opponent = this.getOpponent(player);
 
+    if (player.usedItemDefsThisTurn && player.usedItemDefsThisTurn.includes(item.defId)) {
+      return { ok: false, error: `[${item.name}]은(는) 이번 턴에 이미 사용하셨습니다. (같은 종류의 아이템은 턴당 1회만 사용 가능)` };
+    }
+
+    const opponent = this.getOpponent(player);
     const targetCard = payload && payload.targetInstanceId
       ? (payload.targetOwner === 'self' ? player : opponent).findOnField(payload.targetInstanceId)
       : null;
@@ -605,19 +636,17 @@ class GameRoom {
 
     const result = require('./skills').consumables[item.defId]?.({ room: this, player, opponent, payload });
     if (result && result.error) return { ok: false, error: result.error };
+
     player.removeFromHand(handInstanceId);
     player.trash.push(item);
+    if (!player.usedItemDefsThisTurn) player.usedItemDefsThisTurn = [];
+    player.usedItemDefsThisTurn.push(item.defId);
 
     this.checkWin();
     return { ok: true, events: this.flushEvents() };
   }
 
-  usePredation(player, cardInstanceId, sacrificeInstanceId) {
-    const card = player.findOnField(cardInstanceId);
-    if (!card || card.defId !== 'card_jaeonjaehae') return { ok: false, error: '해당 카드는 포식을 사용할 수 없습니다.' };
-    if (player !== this.currentPlayer()) return { ok: false, error: '당신의 턴이 아닙니다.' };
-    const target = player.findOnField(sacrificeInstanceId);
-    if (!target || target.instanceId === card.instanceId) return { ok: false, error: '포식할 대상이 올바르지 않습니다.' };
+  _executePredation(player, card, target) {
     for (const item of target.attachedItems || []) {
       player.trash.push(item);
     }
@@ -625,9 +654,12 @@ class GameRoom {
     player.removeFromField(target.instanceId);
     player.trash.push(target);
     this.heal(card, 100);
-    this.pushEvent('log', { message: `${card.name}이(가) ${target.name}을(를) 포식하고 hp 100을 회복했습니다.` });
+    this.pushEvent('log', { message: `💀 ${card.name}이(가) 특성 [포식]으로 아군 ${target.name}을(를) 자동 포식하고 HP 100을 회복했습니다!` });
     this.checkWin();
-    return { ok: true, events: this.flushEvents() };
+  }
+
+  usePredation(player, cardInstanceId, sacrificeInstanceId) {
+    return { ok: false, error: '포식은 턴 시작 시 자동으로 발동합니다.' };
   }
 
   // ---------- 상태 스냅샷 (플레이어 시점) ----------

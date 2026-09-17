@@ -46,8 +46,8 @@ console.log('\n--- Test 1: 공격 스킬 아군 대상 지정 차단 ---');
   console.log('✅ 상대 공격 스킬 정상 작동: 적 HP ->', enemyJ.hp);
 }
 
-// 2. 자연재해 포식 특성 (패시브 Free Action - 턴 소모 없음)
-console.log('\n--- Test 2: 자연재해 포식 특성 (턴 소모 없음 & 부착물 트레쉬 이동) ---');
+// 2. 자연재해 포식 특성 (턴 시작 시 아군 몹 1마리 자동 포식)
+console.log('\n--- Test 2: 자연재해 포식 특성 (턴 시작 시 아군 몹 1마리 자동 포식) ---');
 {
   const { room, p1, p2 } = createTestRoom();
   const disaster = new CardInstance(findCardDef('card_jaeonjaehae'));
@@ -60,15 +60,14 @@ console.log('\n--- Test 2: 자연재해 포식 특성 (턴 소모 없음 & 부�
   p1.field[1] = sacrifice;
   p2.field[0] = new CardInstance(findCardDef('card_jeonjangyeon'));
 
-  const turnBefore = room.turnPlayerIndex;
-  const res = room.usePredation(p1, disaster.instanceId, sacrifice.instanceId);
-  assert.strictEqual(res.ok, true);
-  assert.strictEqual(disaster.hp, 400, '포식 후 HP 100 회복 (300 -> 400)');
+  room.turnPlayerIndex = 1; // P2 턴에서 endTurn 시 P1 턴 시작
+  room.endTurn(); // P1 턴 시작 -> 자동 포식 실행
+
+  assert.strictEqual(disaster.hp, 400, '자동 포식 후 HP 100 회복 (300 -> 400)');
   assert.strictEqual(p1.field[1], null, '희생된 카드는 필드에서 제거되어야 함');
   assert.strictEqual(p1.trash.includes(sacrifice), true, '희생된 카드는 트레쉬로 이동해야 함');
   assert.strictEqual(p1.trash.includes(attachItem), true, '부착되어 있던 아이템도 트레쉬로 이동해야 함');
-  assert.strictEqual(room.turnPlayerIndex, turnBefore, '포식 후 턴이 종료되지 않아야 함 (Free Action)');
-  console.log('✅ 자연재해 포식 정상 작동 (HP 회복, 아군 트레쉬, 부착물 트레쉬, 턴 유지)');
+  console.log('✅ 자연재해 자동 포식 정상 작동 (HP 회복, 아군 트레쉬, 부착물 트레쉬)');
 }
 
 // 3. 부착 아이템 효과 (학습력 +10 데미지, 인내력 -15 피해)
