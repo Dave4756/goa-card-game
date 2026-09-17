@@ -7,6 +7,10 @@ let placingCard = null;
 let predationState = null;    // { cardInstanceId }
 let dragData = null;          // 드래그 중인 카드 정보
 
+// 모바일/PC 우클릭 및 롱프레스 터치 시 '이미지 복사하기' 브라우저 팝업 차단
+window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+
 // 카드 데이터 캐시
 let rawCardsData = { mobs: [], items: [] };
 let allCardsMap = {};
@@ -442,11 +446,11 @@ function _processEvent(e) {
   }
   if (e.type === 'turnChange') {
     showTurnChange(e.payload.nickname, e.payload.turnNumber, e.payload.socketId);
-    return 0;
+    return 1200; // 턴 전환 오버레이 노출 동안 대기
   }
   if (e.type === 'skillCast') {
     triggerSkillVfx(e.payload);
-    return 600;
+    return 1500; // 공격/스킬 VFX 애니메이션(컷인, 투사체, 타격)이 완료된 후 턴 전환 이벤트 진행
   }
   if (e.type === 'itemUsed') {
     showItemUsePopup(e.payload);
@@ -1049,8 +1053,14 @@ function render(state) {
     ? (state.me.drawnThisTurn ? '드로우 완료 (스킬/아이템 사용 가능)' : '턴 시작: 카드 드로우를 진행하세요!') : '상대방의 행동을 기다리는 중...';
 
   document.getElementById('oppHandCount').textContent = state.opponent ? state.opponent.handCount : 0;
+  if (document.getElementById('oppDeckCount')) {
+    document.getElementById('oppDeckCount').textContent = state.opponent ? (state.opponent.deckCount || 0) : 0;
+  }
   document.getElementById('oppTrashCount').textContent = state.opponent ? state.opponent.trash.length : 0;
   document.getElementById('myTrashCount').textContent = state.me.trash.length;
+  if (document.getElementById('myDeckCount')) {
+    document.getElementById('myDeckCount').textContent = state.me.deckCount !== undefined ? state.me.deckCount : 0;
+  }
 
   // 배치 단계 UI 및 준비완료 피드백
   const placementView = document.getElementById('placementView');

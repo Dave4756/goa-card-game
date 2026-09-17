@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>전장연 TCG - 공식 카드 게임</title>
 <style>
   :root {
@@ -22,6 +22,13 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    -webkit-touch-callout: none !important; /* iOS Safari 롱프레스 팝업(이미지 복사 등) 차단 */
+    -webkit-user-select: none !important;
+    -khtml-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
+    touch-action: manipulation;
   }
 
   body {
@@ -32,14 +39,12 @@
     min-height: 100vh;
     overflow-x: hidden;
     position: relative;
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
   }
   img {
-    -webkit-user-drag: none;
-    user-drag: none;
+    -webkit-user-drag: none !important;
+    user-drag: none !important;
+    -webkit-touch-callout: none !important;
+    pointer-events: none !important;
   }
 
   body::before {
@@ -1263,6 +1268,43 @@
 
   @keyframes floatUp { 0% { transform: translateY(0); opacity:1; } 100% { transform: translateY(-40px); opacity:0; } }
   @keyframes cardShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+  /* ====== 모바일 뷰포트 & 터치 환경 최적화 ====== */
+  @media (max-width: 768px) {
+    .game-section {
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .card-area {
+      gap: 8px;
+    }
+    #myHand {
+      padding: 20px 10px 10px 10px;
+      min-height: 180px;
+      overflow-x: auto;
+      overflow-y: visible;
+      justify-content: flex-start;
+      -webkit-overflow-scrolling: touch;
+    }
+    #myHand .card {
+      margin-left: -20px;
+      flex-shrink: 0;
+    }
+    #myHand .card:hover, #myHand .card:active {
+      transform: translateY(-25px) scale(1.1) rotate(0deg) !important;
+    }
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+    .game-title {
+      font-size: 32px;
+    }
+    .modal-box {
+      padding: 18px;
+      width: 95%;
+    }
+  }
 </style>
 </head>
 <body>
@@ -1274,7 +1316,7 @@
     <div class="logo-wrapper">
       <img src="/image/goa.png" alt="전장연 카드게임" class="main-logo-img" />
       <h1 class="game-title">전장연 TCG</h1>
-      <p class="game-subtitle">서버 권위형 실시간 온라인 카드 배틀</p>
+      <p class="game-subtitle">실존하는 인물과 단체와는 아무런 관련이 없음을 알려드립니다.</p>
     </div>
 
     <div class="main-menu-container">
@@ -1506,6 +1548,7 @@
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <span class="opp-hand-info">🃏 손패: <b id="oppHandCount">0</b>장</span>
+          <span class="opp-hand-info" style="color:#60a5fa; border-color:rgba(96,165,250,0.3); background:rgba(96,165,250,0.1);">🎴 덱: <b id="oppDeckCount">0</b>장</span>
           <span class="trash-area" onclick="openTrash('opponent')">🗑️ 트레쉬 <b id="oppTrashCount">0</b></span>
         </div>
       </h3>
@@ -1526,7 +1569,12 @@
 
     <!-- 내 손패 -->
     <div class="game-section">
-      <h3>🃏 내 손패</h3>
+      <h3 style="display:flex; justify-content:space-between; align-items:center;">
+        <span>🃏 내 손패</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="opp-hand-info" style="color:#fbbf24; border-color:rgba(251,191,36,0.4); background:rgba(251,191,36,0.12);">🎴 남은 덱: <b id="myDeckCount">0</b>장</span>
+        </div>
+      </h3>
       <div class="card-area" id="myHand"></div>
     </div>
 
