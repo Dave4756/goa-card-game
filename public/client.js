@@ -10,6 +10,34 @@ let dragData = null;          // 드래그 중인 카드 정보
 // 모바일/PC 우클릭 및 롱프레스 터치 시 '이미지 복사하기' 브라우저 팝업 차단
 window.addEventListener('contextmenu', (e) => e.preventDefault());
 
+// 1. 모바일 화면 상단 당겨서 새로고침 (Pull-to-Refresh) 차단
+let _lastTouchY = 0;
+window.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) _lastTouchY = e.touches[0].clientY;
+}, { passive: true });
+
+window.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 1) {
+    const touchY = e.touches[0].clientY;
+    const touchDiff = touchY - _lastTouchY;
+    if (window.scrollY <= 0 && touchDiff > 0) {
+      if (e.cancelable) e.preventDefault();
+    }
+  }
+}, { passive: false });
+
+// 2. 대전 진행 중 실수로 새로고침/뒤로가기/창 닫기 방지 경고 팝업
+window.addEventListener('beforeunload', (e) => {
+  const gameView = document.getElementById('gameView');
+  const isMatchInProgress = gameView && gameView.style.display !== 'none' && lastState && !lastState.winner;
+  if (isMatchInProgress) {
+    e.preventDefault();
+    e.returnValue = '대전이 진행 중입니다. 정말로 나가시겠습니까?';
+    return e.returnValue;
+  }
+});
+
+
 
 // 카드 데이터 캐시
 let rawCardsData = { mobs: [], items: [] };
