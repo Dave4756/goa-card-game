@@ -104,7 +104,7 @@ class GameRoom {
     for (const p of this.players) {
       p.deck = buildCustomDeck(p.customDeck);
       p.shuffleDeck();
-      // 최소 1장 이상의 몹 카드를 포함해서 3장 드로우
+      // 최소 1장 이상의 직접 배치 가능한 기본 몹 카드를 포함해서 3장 드로우 (진화 전용 몹 제외)
       let hand = [];
       let guard = 0;
       do {
@@ -114,7 +114,7 @@ class GameRoom {
         p.shuffleDeck();
         hand = p.draw(3);
         guard += 1;
-      } while (!hand.some((c) => c.type === 'mob') && guard < 50);
+      } while (!hand.some((c) => c.type === 'mob' && !c.def.evolvesFrom) && guard < 50);
       this.pushEvent('log', { message: `${p.nickname}이(가) 카드 3장을 뽑았습니다.` });
     }
     this.phase = PHASE.PLACEMENT;

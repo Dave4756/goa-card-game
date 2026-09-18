@@ -414,6 +414,9 @@ function showGameOverModal(winnerNickname) {
   modal.style.display = 'flex';
 }
 
+// 애니메이션 연출 중 수신된 최신 state 대기용
+let _pendingState = null;
+
 // ===== 애니메이션 이벤트 큐 (아이템 팝업 -> 코인 -> 진화 순서 보장) =====
 let _eventQueue = [];
 let _eventQueueRunning = false;
@@ -424,11 +427,49 @@ function enqueueEvents(events) {
 }
 
 function _drainEventQueue() {
-  if (_eventQueue.length === 0) { _eventQueueRunning = false; return; }
+  if (_eventQueue.length === 0) {
+    _eventQueueRunning = false;
+    if (_pendingState) {
+      lastState = _pendingState;
+      render(_pendingState);
+      _pendingState = null;
+    }
+    return;
+  }
   _eventQueueRunning = true;
   const e = _eventQueue.shift();
   const delay = _processEvent(e);
   setTimeout(() => _drainEventQueue(), delay);
+}
+
+// 특정 카드의 HP만 연출 타이밍에 맞춰 DOM 단계적 반영
+function updateCardHpDom(instanceId, newHp) {
+  const cardEl = document.querySelector(`[data-instance-id="${instanceId}"]`);
+  if (!cardEl) return;
+  const hpTextEl = cardEl.querySelector('.hp-text, .card-hp');
+  if (hpTextEl) {
+    hpTextEl.textContent = `HP ${newHp}`;
+  }
+  const hpBarEl = cardEl.querySelector('.hp-bar-fill');
+  if (hpBarEl && cardEl._maxHp) {
+    const pct = Math.max(0, Math.min(100, (newHp / cardEl._maxHp) * 100));
+    hpBarEl.style.width = pct + '%';
+  }
+}
+
+// 카드 파괴 / 트레쉬 이동 연출
+function triggerCardDestructionAnim(instanceId) {
+  const cardEl = document.querySelector(`[data-instance-id="${instanceId}"]`);
+  if (!cardEl) return;
+  cardEl.classList.add('card-destroyed-anim');
+}
+
+// 모든 카드의 opacity 및 드래그 상태 리셋 (모바일 잠김 방지)
+function resetAllCardStyles() {
+  document.querySelectorAll('.card').forEach(el => {
+    el.style.opacity = '1';
+  });
+  dragData = null;
 }
 
 // 이벤트 처리 후 다음 이벤트까지 기다릴 ms 반환
@@ -452,16 +493,19 @@ function _processEvent(e) {
   if (e.type === 'damage') {
     log(`💥 ${e.payload.amount} 피해 (hp -> ${e.payload.hpAfter})`);
     showFloatingEffect(e.payload.instanceId, `-${e.payload.amount}`, 'damage');
-    return 80;
+    updateCardHpDom(e.payload.instanceId, e.payload.hpAfter);
+    return 400;
   }
   if (e.type === 'heal') {
     log(`💚 ${e.payload.amount} 회복 (hp -> ${e.payload.hpAfter})`);
     showFloatingEffect(e.payload.instanceId, `+${e.payload.amount}`, 'heal');
-    return 80;
+    updateCardHpDom(e.payload.instanceId, e.payload.hpAfter);
+    return 400;
   }
   if (e.type === 'death') {
     log(`☠ ${e.payload.name} 쓰러짐`);
-    return 0;
+    triggerCardDestructionAnim(e.payload.instanceId);
+    return 750;
   }
   if (e.type === 'specialEvolution') {
     log(`✨ 특수 연출: ${e.payload.name}`);
@@ -501,8 +545,12 @@ socket.on('events', (events) => {
 });
 
 socket.on('state', (state) => {
-  lastState = state;
-  render(state);
+  if (_eventQueueRunning || _eventQueue.length > 0) {
+    _pendingState = state;
+  } else {
+    lastState = state;
+    render(state);
+  }
 });
 
 // ===== 선/후공 전용 코인 플립 연출 (선공=앞면, 후공=뒷면) =====
@@ -1442,8 +1490,13 @@ function renderHand(state) {
       div.style.opacity = '0.5';
     });
     div.addEventListener('dragend', () => {
-      div.style.opacity = '1';
-      dragData = null;
+      resetAllCardStyles();
+    });
+    div.addEventListener('touchend', () => {
+      resetAllCardStyles();
+    });
+    div.addEventListener('touchcancel', () => {
+      resetAllCardStyles();
     });
 
     const isMyTurn = lastState && (lastState.phase === 'placement' || lastState.isMyTurn);

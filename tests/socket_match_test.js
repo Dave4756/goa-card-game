@@ -222,7 +222,7 @@ async function runTest() {
       targetOwner: 'self',
       targetInstanceId: curState.me.field[0].instanceId
     });
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 600));
     assert.ok(itemUsedEvents.length > 0, '아이템 사용 시 itemUsed 이벤트 수신');
     console.log('✅ 아이템 카드 사용 시 양측 화면 연출용 itemUsed 이벤트 브로드캐스트 정상 검증');
   } else {

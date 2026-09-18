@@ -1271,6 +1271,49 @@
     100% { transform: scale(1) translateY(0); opacity: 1; }
   }
 
+  /* ====== 수치 플로팅 이펙트 (Damage / Heal Floating Text) ====== */
+  .float-effect {
+    position: absolute;
+    left: 50%;
+    top: 30%;
+    transform: translate(-50%, -50%) scale(0.6);
+    font-size: 38px;
+    font-weight: 900;
+    pointer-events: none;
+    z-index: 100;
+    white-space: nowrap;
+    text-shadow: 0 0 10px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.8);
+    animation: floatPopAndRise 1.1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  .float-effect.damage {
+    color: #ff3b30;
+    -webkit-text-stroke: 2px #7f1d1d;
+    filter: drop-shadow(0 0 15px #ef4444);
+  }
+  .float-effect.heal {
+    color: #34d399;
+    -webkit-text-stroke: 2px #065f46;
+    filter: drop-shadow(0 0 15px #10b981);
+  }
+  @keyframes floatPopAndRise {
+    0% { transform: translate(-50%, 0) scale(0.4); opacity: 0; }
+    25% { transform: translate(-50%, -25px) scale(1.3); opacity: 1; }
+    70% { transform: translate(-50%, -55px) scale(1.1); opacity: 0.95; }
+    100% { transform: translate(-50%, -85px) scale(0.9); opacity: 0; }
+  }
+
+  /* ====== 카드 파괴 / 트레쉬 이동 연출 ====== */
+  .card-destroyed-anim {
+    animation: cardDestroyed 0.75s ease-out forwards !important;
+    pointer-events: none !important;
+  }
+  @keyframes cardDestroyed {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; filter: contrast(1); }
+    20% { transform: scale(1.15) rotate(-5deg); filter: sepia(1) hue-rotate(-50deg) saturate(5) contrast(2); box-shadow: 0 0 40px #ef4444; }
+    40% { transform: scale(0.9) rotate(8deg); opacity: 0.85; filter: grayscale(0.8) contrast(1.5); }
+    100% { transform: scale(0.2) translateY(80px) rotate(-20deg); opacity: 0; filter: grayscale(1) blur(6px); }
+  }
+
   @keyframes floatUp { 0% { transform: translateY(0); opacity:1; } 100% { transform: translateY(-40px); opacity:0; } }
   @keyframes cardShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 
@@ -1319,7 +1362,7 @@
   <!-- ===== 1. 메인 화면 ===== -->
   <div id="mainLobbyView">
     <div class="logo-wrapper">
-      <img src="/image/goa.png" alt="전장연 카드게임" class="main-logo-img" />
+      <img src="/image/image.png" alt="전장연 카드게임" class="main-logo-img" />
       <h1 class="game-title">전장연 TCG</h1>
       <p class="game-subtitle">실존하는 인물과 단체와는 아무런 관련이 없음을 알려드립니다.</p>
     </div>
