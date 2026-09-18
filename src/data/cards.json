@@ -208,7 +208,7 @@
     { "id": "item_4jo", "name": "4조 c 나와~", "type": "item_consume", "image": "dummy.png", "desc": "자신의 필드 몹 카드 1장을 패로 되돌림" },
     { "id": "item_chilpan", "name": "이 칠판 지우개를 봐", "type": "item_consume", "image": "eraser.png", "desc": "자신의 몹 카드 1장을 상대의 다음 공격 대상으로 고정" },
     { "id": "item_hyperfocus", "name": "하이퍼포커스", "type": "item_consume", "image": "dummy.png", "desc": "자신의 몹 카드 1장, 다음 받는 피해를 절반으로" },
-    { "id": "item_gisup", "name": "기습 수행평가", "type": "item_consume", "image": "dummy.png", "desc": "상대 필드 전체 몹을 [혼란] 상태로" },
+    { "id": "item_gisup", "name": "기습 수행평가", "type": "item_consume", "image": "suhang.png", "desc": "상대 필드 전체 몹을 [혼란] 상태로" },
     { "id": "item_ahejang", "name": "아헤장연", "type": "item_consume", "image": "dummy.png", "desc": "효과 없음 (그냥 기분이 좆같다)" }
   ]
 }
