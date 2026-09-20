@@ -194,6 +194,79 @@
       "skills": [
         { "id": "s1", "name": "친한척 하기", "desc": "50 데미지, 대상의 다음 주는 피해 -50%", "value": 50, "targetType": "enemy", "motion": "curse" }
       ]
+    },
+    {
+      "id": "card_taeyang_jonghyeon",
+      "name": "태양 종현",
+      "type": "mob",
+      "hp": 200,
+      "image": "sunflower.png",
+      "trait": { "id": "hydrogen_fusion", "name": "수소 핵융합", "desc": "매턴 시작 시 자신의 HP 50 회복 및 최대 체력 +10" },
+      "skills": [
+        { "id": "s1", "name": "이 따스한 빛이 느껴지나?", "desc": "아군 필드에 [쾌청] 설치", "targetType": "none", "motion": "heal" },
+        { "id": "s2", "name": "따스한 빛", "desc": "아군 1장 선택해 100 회복 및 [보호막] 50 부여", "targetType": "ally", "motion": "heal" }
+      ]
+    },
+    {
+      "id": "card_hui",
+      "name": "희",
+      "type": "mob",
+      "hp": 100,
+      "image": "he.png",
+      "trait": { "id": "joy", "name": "기쁨", "desc": "매턴 자신의 HP 80 회복" },
+      "skills": [
+        { "id": "s1", "name": "매우 기쁘구나", "desc": "아군 1장 선택해 80 회복", "targetType": "ally", "motion": "heal" },
+        { "id": "s2", "name": "하하하하핳", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "tackle" }
+      ]
+    },
+    {
+      "id": "card_ro",
+      "name": "로",
+      "type": "mob",
+      "hp": 100,
+      "image": "ro.png",
+      "trait": { "id": "anger", "name": "분노", "desc": "매턴 자신에게 [피해량 증가] 2스택 부여" },
+      "skills": [
+        { "id": "s1", "name": "매우 화나는구나", "desc": "아군 1장 선택해 [피해량 증가] 3스택 부여", "targetType": "ally", "motion": "fire" },
+        { "id": "s2", "name": "하....ㅆ..", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "slash" }
+      ]
+    },
+    {
+      "id": "card_ae",
+      "name": "애",
+      "type": "mob",
+      "hp": 100,
+      "image": "ea.png",
+      "trait": { "id": "sorrow", "name": "슬픔", "desc": "매턴 자신에게 [받는 피해량 감소] 2스택 부여" },
+      "skills": [
+        { "id": "s1", "name": "매우 슬프구나", "desc": "아군 1장 선택해 [받는 피해량 감소] 3스택 부여", "targetType": "ally", "motion": "curse" },
+        { "id": "s2", "name": "ㅠㅠㅠㅠ", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "water" }
+      ]
+    },
+    {
+      "id": "card_rak",
+      "name": "락",
+      "type": "mob",
+      "hp": 100,
+      "image": "rak.png",
+      "trait": { "id": "pleasure", "name": "즐거움", "desc": "매턴 자신에게 [보호막] 60 부여" },
+      "skills": [
+        { "id": "s1", "name": "매우 즐겁구나", "desc": "아군 1장 선택해 [보호막] 60 부여", "targetType": "ally", "motion": "heal" },
+        { "id": "s2", "name": "ㅋㅋㅋㅋㅋㅋ", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "tackle" }
+      ]
+    },
+    {
+      "id": "card_huiroaerak",
+      "name": "희로애락",
+      "type": "mob",
+      "hp": 523,
+      "image": "super_j.png",
+      "hidden": true,
+      "trait": { "id": "huiroaerak_aura", "name": "喜怒哀樂", "desc": "매턴 시작 시 HP 80 회복, [피해증가] 2스택, [피해감소] 2스택, [보호막] 60 획득" },
+      "skills": [
+        { "id": "s1", "name": "우습구나", "desc": "상대 필드 전체 60 데미지", "value": 60, "targetType": "none", "motion": "lightning" },
+        { "id": "s2", "name": "나락(奈落)으로 꺼져라", "desc": "200 데미지", "value": 200, "targetType": "enemy", "motion": "earthquake" }
+      ]
     }
   ],
   "items": [
@@ -205,7 +278,7 @@
     { "id": "item_ai_geumji", "name": "생성형 ai 사용 금지!", "type": "item_consume", "image": "nochatgpt.png", "desc": "상대 몹 카드 1장의 부착 아이템을 트레쉬로 이동" },
     { "id": "item_ya_i_sibal", "name": "야 이 시발", "type": "item_consume", "image": "siba.png", "desc": "자신의 몹 카드 1장의 모든 상태이상 해제" },
     { "id": "item_pos_neg", "name": "positive negative", "type": "item_consume", "image": "potion.jpeg", "desc": "대상 1장에 동전 던지기: 앞면 hp 100 회복, 뒷면 100 피해" },
-    { "id": "item_4jo", "name": "4조 c 나와~", "type": "item_consume", "image": "dummy.png", "desc": "자신의 필드 몹 카드 1장을 패로 되돌림" },
+    { "id": "item_4jo", "name": "4조 c 나와~", "type": "item_consume", "image": "pickup.png", "desc": "자신의 필드 몹 카드 1장을 패로 되돌림" },
     { "id": "item_chilpan", "name": "이 칠판 지우개를 봐", "type": "item_consume", "image": "eraser.png", "desc": "자신의 몹 카드 1장을 상대의 다음 공격 대상으로 고정" },
     { "id": "item_hyperfocus", "name": "하이퍼포커스", "type": "item_consume", "image": "dummy.png", "desc": "자신의 몹 카드 1장, 다음 받는 피해를 절반으로" },
     { "id": "item_gisup", "name": "기습 수행평가", "type": "item_consume", "image": "suhang.png", "desc": "상대 필드 전체 몹을 [혼란] 상태로" },

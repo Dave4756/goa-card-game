@@ -1000,6 +1000,15 @@ function renderStatusBadges(card) {
   if (stacks.hotFuel && stacks.hotFuel > 0) {
     html += `<span class="status-badge-item badge-hotfuel" title="과열된 연료 스택">🏎️ [과열연료 x${stacks.hotFuel}]</span>`;
   }
+  if (stacks.shield && stacks.shield > 0) {
+    html += `<span class="status-badge-item badge-shield" title="보호막 수치만큼 피격 피해를 우선 감면">🛡️ [보호막 ${stacks.shield}]</span>`;
+  }
+  if (stacks.dmgUp && stacks.dmgUp > 0) {
+    html += `<span class="status-badge-item badge-dmgup" title="1스택당 주는 피해 +10% (공격 후 소실)">⚔️ [피해증가 x${stacks.dmgUp}]</span>`;
+  }
+  if (stacks.dmgDown && stacks.dmgDown > 0) {
+    html += `<span class="status-badge-item badge-dmgdown" title="1스택당 받는 피해 -10% (피격 후 소실)">🛡️ [피해감소 x${stacks.dmgDown}]</span>`;
+  }
 
   if (!html) return '';
   return `<div class="status-badge-list">${html}</div>`;
@@ -1083,7 +1092,10 @@ function updateCancelButton() {
       document.body.appendChild(btn);
     }
     let targetMsg = '대상 선택 중...';
-    if (pendingSkill) targetMsg = `⚔️ [${pendingSkill.skillName}] 상대 카드 선택 중`;
+    if (pendingSkill) {
+      if (pendingSkill.targetType === 'ally') targetMsg = `✨ [${pendingSkill.skillName}] 아군 카드 선택 중`;
+      else targetMsg = `⚔️ [${pendingSkill.skillName}] 상대 카드 선택 중`;
+    }
     else if (predationState) targetMsg = '🍽️ 포식할 아군 카드 선택 중';
     else if (pendingAttach) targetMsg = '🔗 장착할 아군 카드 선택 중';
     else if (pendingConsumable) targetMsg = `📦 [${pendingConsumable.cardName}] 대상 선택 중`;
@@ -1185,13 +1197,19 @@ function render(state) {
   renderField('myField', state.me.field, false, state);
   renderField('oppField', state.opponent ? state.opponent.field : [], true, state);
 
-  // 설치형 필드 키워드 (전기장 등) 갱신
+  // 설치형 필드 키워드 (전기장, 쾌청 등) 갱신
   const myFieldSection = document.getElementById('myFieldSection');
   const myKeywordBadge = document.getElementById('myFieldKeywordBadge');
   if (myFieldSection && myKeywordBadge) {
     const myHasElectric = state.me.fieldKeyword === 'electricField' || state.me.fieldKeyword === 'electric_field';
+    const myHasSunny = state.me.fieldKeyword === 'sunny';
     if (myHasElectric) {
       myFieldSection.classList.add('electric-active');
+      myKeywordBadge.textContent = '⚡ [전기장 가동 중: 과충전 2배]';
+      myKeywordBadge.style.display = 'inline-flex';
+    } else if (myHasSunny) {
+      myFieldSection.classList.remove('electric-active');
+      myKeywordBadge.textContent = '☀️ [쾌청 가동 중: 솔라빔 -1턴]';
       myKeywordBadge.style.display = 'inline-flex';
     } else {
       myFieldSection.classList.remove('electric-active');
@@ -1203,8 +1221,14 @@ function render(state) {
   const oppKeywordBadge = document.getElementById('oppFieldKeywordBadge');
   if (oppFieldSection && oppKeywordBadge) {
     const oppHasElectric = state.opponent && (state.opponent.fieldKeyword === 'electricField' || state.opponent.fieldKeyword === 'electric_field');
+    const oppHasSunny = state.opponent && state.opponent.fieldKeyword === 'sunny';
     if (oppHasElectric) {
       oppFieldSection.classList.add('electric-active');
+      oppKeywordBadge.textContent = '⚡ [전기장 가동 중: 과충전 2배]';
+      oppKeywordBadge.style.display = 'inline-flex';
+    } else if (oppHasSunny) {
+      oppFieldSection.classList.remove('electric-active');
+      oppKeywordBadge.textContent = '☀️ [쾌청 가동 중: 솔라빔 -1턴]';
       oppKeywordBadge.style.display = 'inline-flex';
     } else {
       oppFieldSection.classList.remove('electric-active');
@@ -1247,14 +1271,23 @@ function cardEl(card, isEnemy) {
   div.addEventListener('click', (e) => {
     if (e.target.tagName === 'BUTTON') return;
 
-    // 1. 공격 스킬 타겟팅 상태일 때
-    if (pendingSkill && pendingSkill.targetType === 'enemy') {
-      if (!isEnemy) {
-        log('⚠️ 공격 스킬은 상대 카드만 대상으로 지정할 수 있습니다!');
+    // 1. 스킬 타겟팅 상태일 때
+    if (pendingSkill) {
+      if (pendingSkill.targetType === 'enemy') {
+        if (!isEnemy) {
+          log('⚠️ 공격 스킬은 상대 카드만 대상으로 지정할 수 있습니다!');
+          return;
+        }
+        onTargetPicked(card.instanceId, 'opponent');
+        return;
+      } else if (pendingSkill.targetType === 'ally') {
+        if (isEnemy) {
+          log('⚠️ 아군 지정 스킬은 아군 카드만 대상으로 지정할 수 있습니다!');
+          return;
+        }
+        onTargetPicked(card.instanceId, 'self');
         return;
       }
-      onTargetPicked(card.instanceId, 'opponent');
-      return;
     }
 
     // 2. 포식 타겟팅 상태일 때
@@ -1349,14 +1382,23 @@ function cardEl(card, isEnemy) {
     }
 
     // 타겟 모드일 때 전용 액션 버튼
-    if (pendingSkill && pendingSkill.targetType === 'enemy') {
-      if (isEnemy && (card.alive !== false) && card.hp > 0) {
+    if (pendingSkill) {
+      if (pendingSkill.targetType === 'enemy' && isEnemy && (card.alive !== false) && card.hp > 0) {
         const tb = document.createElement('button');
         tb.textContent = '🎯 공격 대상으로 지정';
         tb.style.cssText = 'width:100%;margin-top:6px;background:#dc2626;color:#fff;font-weight:800;padding:8px;border-radius:6px;border:2px solid #fff;box-shadow:0 0 10px rgba(220,38,38,0.8);cursor:pointer;';
         tb.onclick = (e) => {
           e.stopPropagation();
           onTargetPicked(card.instanceId, 'opponent');
+        };
+        div.appendChild(tb);
+      } else if (pendingSkill.targetType === 'ally' && !isEnemy && (card.alive !== false) && card.hp > 0) {
+        const tb = document.createElement('button');
+        tb.textContent = '✨ 아군 대상으로 지정';
+        tb.style.cssText = 'width:100%;margin-top:6px;background:#10b981;color:#fff;font-weight:800;padding:8px;border-radius:6px;border:2px solid #fff;box-shadow:0 0 10px rgba(16,185,129,0.8);cursor:pointer;';
+        tb.onclick = (e) => {
+          e.stopPropagation();
+          onTargetPicked(card.instanceId, 'self');
         };
         div.appendChild(tb);
       }
@@ -1774,6 +1816,19 @@ function selectSkill(cardInstanceId, skillId) {
     log(`⚔️ [${sk.name}] 공격 대상을 상대 필드에서 선택하세요.`);
     render(lastState);
   }
+
+  // 3. 아군 1명 대상 지정 스킬 (targetType === 'ally')
+  if (sk.targetType === 'ally') {
+    const allyMobs = (lastState.me ? lastState.me.field : []).filter(c => c && (c.alive !== false) && (c.hp > 0));
+    if (allyMobs.length === 0) {
+      alert('필드에 살아있는 아군 몹이 없습니다.');
+      return;
+    }
+
+    pendingSkill = { cardInstanceId, skillId, targetType: 'ally', skillName: sk.name };
+    log(`✨ [${sk.name}] 적용 대상을 아군 필드에서 선택하세요.`);
+    render(lastState);
+  }
 }
 
 // ===== 자연재해 포식 (특성 패시브 자동 발동 안내) =====
@@ -1828,10 +1883,14 @@ function showNoTargetButton() {
 
 // ===== 타겟 선택 완료 처리 =====
 function onTargetPicked(instanceId, owner) {
-  // 1. 공격 스킬
+  // 1. 공격 / 아군 스킬
   if (pendingSkill) {
     if (pendingSkill.targetType === 'enemy' && owner === 'self') {
       log('⚠️ 공격 스킬은 아군을 대상으로 지정할 수 없습니다!');
+      return;
+    }
+    if (pendingSkill.targetType === 'ally' && owner !== 'self') {
+      log('⚠️ 아군 지정 스킬은 상대 카드를 대상으로 지정할 수 없습니다!');
       return;
     }
     socket.emit('useSkill', {

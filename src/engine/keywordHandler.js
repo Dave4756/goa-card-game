@@ -1,4 +1,4 @@
-const { STATUS, STACK, MAX_OVERCHARGE, FIELD_KEYWORD } = require('./constants');
+const { STATUS, STACK, MAX_OVERCHARGE, MAX_DMG_STACK, FIELD_KEYWORD } = require('./constants');
 
 /** 전기장 적용해서 과충전 스택 부여 (전기장 있으면 획득량 *2) */
 function addOverchargeWithField(room, player, card, amount) {
@@ -59,6 +59,50 @@ function onTurnStart(room, player, opponent) {
       card.flags.photosynthesisBoost += 10;
     }
 
+    // 트레잇: 수소 핵융합 (태양 종현)
+    if (card.def.trait && card.def.trait.id === 'hydrogen_fusion') {
+      card.maxHp += 10;
+      room.heal(card, 50);
+      room.pushEvent('log', { message: `☀️ ${card.name} 특성 [수소 핵융합]: HP 50 회복 및 최대 HP +10!` });
+    }
+
+    // 트레잇: 기쁨 (희)
+    if (card.def.trait && card.def.trait.id === 'joy') {
+      room.heal(card, 80);
+      room.pushEvent('log', { message: `😄 ${card.name} 특성 [기쁨]: HP 80 회복!` });
+    }
+
+    // 트레잇: 분노 (로)
+    if (card.def.trait && card.def.trait.id === 'anger') {
+      card.addStack(STACK.DMG_UP, 2, MAX_DMG_STACK);
+      room.pushEvent('stackGain', { instanceId: card.instanceId, stack: STACK.DMG_UP, value: card.getStack(STACK.DMG_UP) });
+      room.pushEvent('log', { message: `😡 ${card.name} 특성 [분노]: [피해량 증가] 2스택 획득!` });
+    }
+
+    // 트레잇: 슬픔 (애)
+    if (card.def.trait && card.def.trait.id === 'sorrow') {
+      card.addStack(STACK.DMG_DOWN, 2, MAX_DMG_STACK);
+      room.pushEvent('stackGain', { instanceId: card.instanceId, stack: STACK.DMG_DOWN, value: card.getStack(STACK.DMG_DOWN) });
+      room.pushEvent('log', { message: `😢 ${card.name} 특성 [슬픔]: [받는 피해량 감소] 2스택 획득!` });
+    }
+
+    // 트레잇: 즐거움 (락)
+    if (card.def.trait && card.def.trait.id === 'pleasure') {
+      card.addStack(STACK.SHIELD, 60);
+      room.pushEvent('stackGain', { instanceId: card.instanceId, stack: STACK.SHIELD, value: card.getStack(STACK.SHIELD) });
+      room.pushEvent('log', { message: `😆 ${card.name} 특성 [즐거움]: [보호막] 60 획득!` });
+    }
+
+    // 트레잇: 喜怒哀樂 (희로애락)
+    if (card.def.trait && card.def.trait.id === 'huiroaerak_aura') {
+      room.heal(card, 80);
+      card.addStack(STACK.DMG_UP, 2, MAX_DMG_STACK);
+      card.addStack(STACK.DMG_DOWN, 2, MAX_DMG_STACK);
+      card.addStack(STACK.SHIELD, 60);
+      room.pushEvent('stackGain', { instanceId: card.instanceId, stack: STACK.SHIELD, value: card.getStack(STACK.SHIELD) });
+      room.pushEvent('log', { message: `✨ ${card.name} 특성 [喜怒哀樂]: HP 80 회복, 피해증가+2, 피해감소+2, 보호막+60!` });
+    }
+
     // 부착 아이템: 사회 친화력 - 매턴 hp 10 회복
     for (const item of card.attachedItems || []) {
       if (item.defId === 'item_sahoechinhwaryeok') {
@@ -69,8 +113,12 @@ function onTurnStart(room, player, opponent) {
     // 종바라기 솔라빔 준비 카운트다운
     if (card.flags.solarBeamPending) {
       blocked.add(card.instanceId);
-      card.flags.skillLockTurns -= 1;
-      room.pushEvent('log', { message: `${card.name}이(가) 빛을 모으고 있습니다... (남은 턴: ${card.flags.skillLockTurns})` });
+      let decrement = 1;
+      if (player.fieldKeyword === FIELD_KEYWORD.SUNNY) {
+        decrement += 1;
+      }
+      card.flags.skillLockTurns -= decrement;
+      room.pushEvent('log', { message: `${card.name}이(가) 빛을 모으고 있습니다... (남은 턴: ${Math.max(0, card.flags.skillLockTurns)})` });
       if (card.flags.skillLockTurns <= 0) {
         card.flags.solarBeamPending = false;
         fireSolarBeam(room, player, opponent, card);

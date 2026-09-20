@@ -1,4 +1,4 @@
-const { STATUS, STACK, FIELD_KEYWORD } = require('./constants');
+const { STATUS, STACK, MAX_DMG_STACK, FIELD_KEYWORD } = require('./constants');
 const { addOverchargeWithField } = require('./keywordHandler');
 
 /** ctx = { room, player, opponent, card, target, targetInfo } */
@@ -171,6 +171,77 @@ const skillHandlers = {
     s1: ({ room, player, opponent, card, target }) => {
       room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 50 });
       if (target) target.addStatus(STATUS.HALVE_NEXT_DAMAGE_DEALT, {});
+    },
+  },
+
+  card_taeyang_jonghyeon: {
+    s1: ({ room, player }) => {
+      player.fieldKeyword = FIELD_KEYWORD.SUNNY;
+      room.pushEvent('fieldKeyword', { owner: player.nickname, keyword: FIELD_KEYWORD.SUNNY });
+      room.pushEvent('log', { message: `${player.nickname}의 필드에 [쾌청]이 설치되었습니다.` });
+    },
+    s2: ({ room, target }) => {
+      if (!target) return;
+      room.heal(target, 100);
+      target.addStack(STACK.SHIELD, 50);
+      room.pushEvent('stackGain', { instanceId: target.instanceId, stack: STACK.SHIELD, value: target.getStack(STACK.SHIELD) });
+      room.pushEvent('log', { message: `${target.name}에게 100 회복 및 [보호막 50]을 부여했습니다.` });
+    },
+  },
+
+  card_hui: {
+    s1: ({ room, target }) => {
+      if (!target) return;
+      room.heal(target, 80);
+      room.pushEvent('log', { message: `${target.name}에게 80 HP를 회복했습니다.` });
+    },
+    s2: ({ room, player, opponent, card, target }) => {
+      room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 60 });
+    },
+  },
+
+  card_ro: {
+    s1: ({ room, target }) => {
+      if (!target) return;
+      target.addStack(STACK.DMG_UP, 3, MAX_DMG_STACK);
+      room.pushEvent('stackGain', { instanceId: target.instanceId, stack: STACK.DMG_UP, value: target.getStack(STACK.DMG_UP) });
+      room.pushEvent('log', { message: `${target.name}에게 [피해량 증가] 3스택을 부여했습니다.` });
+    },
+    s2: ({ room, player, opponent, card, target }) => {
+      room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 60 });
+    },
+  },
+
+  card_ae: {
+    s1: ({ room, target }) => {
+      if (!target) return;
+      target.addStack(STACK.DMG_DOWN, 3, MAX_DMG_STACK);
+      room.pushEvent('stackGain', { instanceId: target.instanceId, stack: STACK.DMG_DOWN, value: target.getStack(STACK.DMG_DOWN) });
+      room.pushEvent('log', { message: `${target.name}에게 [받는 피해량 감소] 3스택을 부여했습니다.` });
+    },
+    s2: ({ room, player, opponent, card, target }) => {
+      room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 60 });
+    },
+  },
+
+  card_rak: {
+    s1: ({ room, target }) => {
+      if (!target) return;
+      target.addStack(STACK.SHIELD, 60);
+      room.pushEvent('stackGain', { instanceId: target.instanceId, stack: STACK.SHIELD, value: target.getStack(STACK.SHIELD) });
+      room.pushEvent('log', { message: `${target.name}에게 [보호막 60]을 부여했습니다.` });
+    },
+    s2: ({ room, player, opponent, card, target }) => {
+      room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 60 });
+    },
+  },
+
+  card_huiroaerak: {
+    s1: ({ room, player, opponent, card }) => {
+      room.dealDamageAll({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, baseAmount: 60 });
+    },
+    s2: ({ room, player, opponent, card, target }) => {
+      room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 200 });
     },
   },
 };

@@ -208,9 +208,17 @@ class GameRoom {
     if (!targetCard || !targetCard.alive) return 0;
     let amount = Math.max(0, baseAmount);
 
-    // 공격자 보정 (영구 강화, 다음 공격 절반 디버프)
+    // 공격자 보정 (영구 강화, 다음 공격 절반 디버프, DMG_UP 스택)
     if (sourceCard && !skipSourceBonuses) {
       amount += sourceCard.permanentDamageBonus || 0;
+
+      // DMG_UP 스택: 스택당 +10% 피해
+      const dmgUpStack = sourceCard.getStack(STACK.DMG_UP);
+      if (dmgUpStack > 0) {
+        amount *= (1 + dmgUpStack * 0.1);
+        sourceCard.setStack(STACK.DMG_UP, 0); // 공격 시전 후 소실
+      }
+
       // 부착 아이템: 학습력 - 주는 피해 +10
       for (const item of sourceCard.attachedItems || []) {
         if (item.defId === 'item_hakseupryeok') amount += 10;
@@ -227,6 +235,13 @@ class GameRoom {
     }
 
     // 방어자 보정
+    // DMG_DOWN 스택: 스택당 -10% 피해 감소
+    const dmgDownStack = targetCard.getStack(STACK.DMG_DOWN);
+    if (dmgDownStack > 0) {
+      amount *= (1 - Math.min(1.0, dmgDownStack * 0.1));
+      targetCard.setStack(STACK.DMG_DOWN, 0); // 피격 적용 후 소실
+    }
+
     // 부착 아이템: 인내력 - 받는 피해 -15
     for (const item of targetCard.attachedItems || []) {
       if (item.defId === 'item_innaeryeok') amount -= 15;
@@ -250,6 +265,22 @@ class GameRoom {
     }
 
     amount = Math.max(0, Math.round(amount));
+
+    // 보호막(SHIELD) 감면 파이프라인
+    const shieldStack = targetCard.getStack(STACK.SHIELD);
+    if (shieldStack > 0 && amount > 0) {
+      if (amount <= shieldStack) {
+        const remainingShield = shieldStack - amount;
+        targetCard.setStack(STACK.SHIELD, remainingShield);
+        this.pushEvent('log', { message: `🛡️ ${targetCard.name}의 보호막이 ${amount} 피해를 모두 흡수했습니다. (남은 보호막: ${remainingShield})` });
+        amount = 0;
+      } else {
+        const absorbed = shieldStack;
+        amount -= absorbed;
+        targetCard.setStack(STACK.SHIELD, 0);
+        this.pushEvent('log', { message: `🛡️ ${targetCard.name}의 보호막이 ${absorbed} 피해를 흡수하고 소실되었습니다.` });
+      }
+    }
 
     // 흘러내린 머리카락: 양옆 아군이 입는 피해의 절반을 대신 받음
     const hairNeighbor = targetPlayer
@@ -508,7 +539,43 @@ class GameRoom {
     player.removeFromHand(handInstanceId);
     player.field[slot] = card;
     this.pushEvent('log', { message: `${player.nickname}이(가) ${card.name}을(를) 필드에 배치했습니다.` });
+    this._checkHuiRoAeRakAwaken(player);
     return { ok: true, events: this.flushEvents() };
+  }
+
+  _checkHuiRoAeRakAwaken(player) {
+    const componentIds = ['card_hui', 'card_ro', 'card_ae', 'card_rak'];
+    const fieldMobs = player.fieldMobs();
+    const presentComponents = new Set();
+    for (const mob of fieldMobs) {
+      if (componentIds.includes(mob.defId)) {
+        presentComponents.add(mob.defId);
+      }
+    }
+    if (presentComponents.size >= 3) {
+      // 희생 및 희로애락 소환
+      for (const mob of fieldMobs) {
+        for (const item of mob.attachedItems || []) {
+          player.trash.push(item);
+        }
+        mob.attachedItems = [];
+        player.trash.push(mob);
+      }
+      player.field = [null, null, null];
+
+      const huiroaerakDef = ALL_DEFS['card_huiroaerak'];
+      const huiroaerakCard = new CardInstance(huiroaerakDef);
+      player.field[1] = huiroaerakCard; // 중앙 슬롯 배치
+
+      this.pushEvent('specialEvolution', {
+        instanceId: huiroaerakCard.instanceId,
+        name: huiroaerakCard.name,
+        kind: 'huiroaerak_awaken',
+      });
+      this.pushEvent('log', {
+        message: `✨ [희, 로, 애, 락] 중 3가지 기운이 모여 [희로애락]으로 합체 강림 소환되었습니다! (HP: ${huiroaerakCard.hp})`,
+      });
+    }
   }
 
   returnFieldCardToHand(player, instanceId) {

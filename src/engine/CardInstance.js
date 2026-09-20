@@ -54,6 +54,11 @@ class CardInstance {
     return this.stacks[stack];
   }
 
+  setStack(stack, amount) {
+    this.stacks[stack] = Math.max(0, amount);
+    return this.stacks[stack];
+  }
+
   getStack(stack) {
     return this.stacks[stack] || 0;
   }
