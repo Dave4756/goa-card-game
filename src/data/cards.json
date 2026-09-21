@@ -209,7 +209,7 @@
     },
     {
       "id": "card_hui",
-      "name": "희",
+      "name": "희(喜)",
       "type": "mob",
       "hp": 100,
       "image": "he.png",
@@ -221,7 +221,7 @@
     },
     {
       "id": "card_ro",
-      "name": "로",
+      "name": "로(怒)",
       "type": "mob",
       "hp": 100,
       "image": "ro.png",
@@ -233,7 +233,7 @@
     },
     {
       "id": "card_ae",
-      "name": "애",
+      "name": "애(哀)",
       "type": "mob",
       "hp": 100,
       "image": "ea.png",
@@ -245,7 +245,7 @@
     },
     {
       "id": "card_rak",
-      "name": "락",
+      "name": "락(樂)",
       "type": "mob",
       "hp": 100,
       "image": "rak.png",
@@ -257,10 +257,10 @@
     },
     {
       "id": "card_huiroaerak",
-      "name": "희로애락",
+      "name": "희로애락(喜怒哀樂)",
       "type": "mob",
       "hp": 523,
-      "image": "super_j.png",
+      "image": "heroearak.png",
       "hidden": true,
       "trait": { "id": "huiroaerak_aura", "name": "喜怒哀樂", "desc": "매턴 시작 시 HP 80 회복, [피해증가] 2스택, [피해감소] 2스택, [보호막] 60 획득" },
       "skills": [
