@@ -155,9 +155,9 @@ async function runTest() {
   assert.strictEqual(p1State.phase, 'placement', '2인 입장 후 PLACEMENT 페이즈 진입');
   console.log('✅ P2 방 입장 및 배치 페이즈 시작');
 
-  // 3. 몹 배치
-  const p1Mob = p1State.me.hand.find(c => c.type === 'mob');
-  const p2Mob = p2State.me.hand.find(c => c.type === 'mob');
+  // 3. 몹 배치 (진화 전용 몹 제외한 직접 배치 가능 몹 선택)
+  const p1Mob = p1State.me.hand.find(c => c.type === 'mob' && !c.evolvesFrom);
+  const p2Mob = p2State.me.hand.find(c => c.type === 'mob' && !c.evolvesFrom);
   p1.clientSide.emit('placeMob', { handInstanceId: p1Mob.instanceId, slot: 0 });
   p2.clientSide.emit('placeMob', { handInstanceId: p2Mob.instanceId, slot: 0 });
   await new Promise(r => setTimeout(r, 60));

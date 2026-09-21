@@ -512,6 +512,9 @@ function _processEvent(e) {
     if (e.payload.kind === 'gakseong_awaken') {
       showGakseongSummon(e.payload.name);
       return 3200; // 각성 연출 3.2초 대기
+    } else if (e.payload.kind === 'huiroaerak_awaken') {
+      showHuiRoAeRakSummon(e.payload.name);
+      return 3300; // 희로애락 한자 합체 소환 연출 3.3초 대기
     }
     showSpecialEffect(e.payload.name, e.payload.kind);
     return 2500;
@@ -684,6 +687,60 @@ function showGakseongSummon(name) {
       g2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.7);
       osc2.connect(g2); g2.connect(ctx.destination);
       osc2.start(ctx.currentTime + 0.1); osc2.stop(ctx.currentTime + 0.7);
+    }
+  } catch(e) {}
+}
+
+// ===== 희로애락(喜怒哀樂) 한자 합체 강림 전용 궁극 소환 연출 =====
+function showHuiRoAeRakSummon(name) {
+  const overlay = document.getElementById('huiroaerakSummonOverlay');
+  if (!overlay) { showSpecialEffect(name, 'huiroaerak_awaken'); return; }
+
+  const title = overlay.querySelector('#huiroaerakTitle');
+  if (title) title.textContent = `✨ 喜 怒 哀 樂 ✨`;
+
+  overlay.classList.remove('active', 'phase1', 'phase2');
+  void overlay.offsetWidth;
+
+  // 화면 전체 진동
+  document.body.classList.add('screen-shake');
+  setTimeout(() => document.body.classList.remove('screen-shake'), 600);
+
+  overlay.classList.add('active');
+  setTimeout(() => overlay.classList.add('phase1'), 200);   // 한자 喜 怒 哀 樂 기운 모임
+  setTimeout(() => overlay.classList.add('phase2'), 1100);  // 카드 강림 & 대형 타이틀 폭발
+  setTimeout(() => {
+    overlay.classList.remove('active', 'phase1', 'phase2');
+  }, 3200);
+
+  // 전용 웅장한 사운드 이펙트
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      const ctx = new AudioCtx();
+      // 깊은 저음 북소리
+      const osc1 = ctx.createOscillator();
+      const g1 = ctx.createGain();
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(100, ctx.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.8);
+      g1.gain.setValueAtTime(0.9, ctx.currentTime);
+      g1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+      osc1.connect(g1); g1.connect(ctx.destination);
+      osc1.start(); osc1.stop(ctx.currentTime + 0.8);
+
+      // 화려한 아르페지오 신스음 (喜 怒 哀 樂 4색 기운 음계)
+      [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + 0.15 * i);
+        g.gain.setValueAtTime(0.3, ctx.currentTime + 0.15 * i);
+        g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15 * i + 0.4);
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(ctx.currentTime + 0.15 * i);
+        osc.stop(ctx.currentTime + 0.15 * i + 0.4);
+      });
     }
   } catch(e) {}
 }
@@ -1566,11 +1623,31 @@ function renderHand(state) {
         tag.style.cssText = `display:block;font-size:10px;margin-top:4px;color:${canEvolve ? '#34d399' : '#f87171'};font-weight:700;`;
         div.appendChild(tag);
       } else {
-        const b = document.createElement('button');
-        b.textContent = '필드로 배치';
-        b.disabled = !isMyTurn;
-        b.onclick = (e) => { e.stopPropagation(); selectForPlacement(c.instanceId); };
-        div.appendChild(b);
+        // 희로애락 4장 합체 소환 가능 판정 (필드 3장 + 이 손패 카드 1장)
+        const componentIds = ['card_hui', 'card_ro', 'card_ae', 'card_rak'];
+        const isComponent = componentIds.includes(c.defId);
+        const fieldMobs = (lastState && lastState.me && lastState.me.field) ? lastState.me.field.filter(m => m && componentIds.includes(m.defId)) : [];
+        const presentFieldComponents = new Set(fieldMobs.map(m => m.defId));
+        const canAwakenHuiRoAeRak = isComponent && fieldMobs.length === 3 && presentFieldComponents.size === 3 && !presentFieldComponents.has(c.defId);
+
+        if (canAwakenHuiRoAeRak) {
+          const ab = document.createElement('button');
+          ab.textContent = '✨ [喜怒哀樂] 합체 강림!';
+          ab.disabled = !isMyTurn;
+          ab.style.cssText = 'width:100%;margin-top:4px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-weight:900;border:2px solid #fff;box-shadow:0 0 15px rgba(245,158,11,0.8);cursor:pointer;';
+          ab.onclick = (e) => {
+            e.stopPropagation();
+            if (!isMyTurn) return alert('상대방의 턴입니다.');
+            socket.emit('placeMob', { handInstanceId: c.instanceId, slot: 0 });
+          };
+          div.appendChild(ab);
+        } else {
+          const b = document.createElement('button');
+          b.textContent = '필드로 배치';
+          b.disabled = !isMyTurn;
+          b.onclick = (e) => { e.stopPropagation(); selectForPlacement(c.instanceId); };
+          div.appendChild(b);
+        }
       }
     } else if (c.type === 'item_attach') {
       const b = document.createElement('button');

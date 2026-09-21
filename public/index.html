@@ -1251,6 +1251,102 @@
     100% { opacity: 0.4; }
   }
 
+  /* ====== 희로애락(喜怒哀樂) 한자 합체 강림 오버레이 ====== */
+  #huiroaerakSummonOverlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(5, 7, 14, 0.96);
+    backdrop-filter: blur(12px);
+    z-index: 320;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #huiroaerakSummonOverlay.active { display: flex; }
+
+  .huiroaerak-flash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle, #fff 0%, rgba(251,191,36,0.6) 40%, transparent 80%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .huiroaerak-characters {
+    position: absolute;
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .hanja-char {
+    font-size: 72px;
+    font-weight: 900;
+    font-family: 'Pretendard', serif;
+    opacity: 0;
+    transform: scale(3) rotate(-15deg);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-shadow: 0 0 40px currentColor, 0 0 80px currentColor;
+  }
+
+  .char-hui { color: #fbbf24; text-shadow: 0 0 40px #f59e0b, 0 0 80px #fbbf24; } /* 기쁨: 황금 */
+  .char-ro  { color: #f87171; text-shadow: 0 0 40px #ef4444, 0 0 80px #f87171; } /* 분노: 붉은색 */
+  .char-ae  { color: #60a5fa; text-shadow: 0 0 40px #3b82f6, 0 0 80px #60a5fa; } /* 슬픔: 푸른색 */
+  .char-rak { color: #34d399; text-shadow: 0 0 40px #10b981, 0 0 80px #34d399; } /* 즐거움: 에메랄드 */
+
+  #huiroaerakSummonOverlay.phase1 .char-hui { opacity: 1; transform: scale(1) rotate(0deg); }
+  #huiroaerakSummonOverlay.phase1 .char-ro  { opacity: 1; transform: scale(1) rotate(0deg); transition-delay: 0.15s; }
+  #huiroaerakSummonOverlay.phase1 .char-ae  { opacity: 1; transform: scale(1) rotate(0deg); transition-delay: 0.3s; }
+  #huiroaerakSummonOverlay.phase1 .char-rak { opacity: 1; transform: scale(1) rotate(0deg); transition-delay: 0.45s; }
+
+  .huiroaerak-summon-box {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    transform: translateY(100px) scale(0.3);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  #huiroaerakSummonOverlay.phase2 .huiroaerak-summon-box {
+    opacity: 1;
+    transform: translateY(0) scale(1.05);
+  }
+
+  .huiroaerak-card-img {
+    width: 230px;
+    height: 320px;
+    object-fit: cover;
+    border-radius: 18px;
+    border: 4px solid #f59e0b;
+    box-shadow: 0 0 80px rgba(245, 158, 11, 0.95), 0 0 120px rgba(239, 68, 68, 0.6), 0 20px 60px rgba(0,0,0,0.95);
+  }
+
+  .huiroaerak-title {
+    margin-top: 22px;
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    background: linear-gradient(135deg, #fbbf24, #f87171, #60a5fa, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 30px rgba(251, 191, 36, 0.8));
+    text-align: center;
+  }
+  .huiroaerak-subtitle {
+    margin-top: 8px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+    letter-spacing: 1px;
+  }
+
   /* ====== 아이템 사용 연출 팝업 오버레이 ====== */
   #itemUseOverlay {
     display: none;
@@ -1561,6 +1657,22 @@
       <img id="gakseongCardImg" class="gakseong-summon-card-img" src="/image/super_j.png" alt="각성 리즈시절 전장연" />
       <div class="gakseong-title" id="gakseongTitle">⚡ 각성 리즈시절 전장연 ⚡</div>
       <div class="gakseong-subtitle">세 가지 힘이 하나로 모였다!</div>
+    </div>
+  </div>
+
+  <!-- ===== 희로애락(喜怒哀樂) 한자 합체 강림 궁극 소환 오버레이 ===== -->
+  <div id="huiroaerakSummonOverlay">
+    <div class="huiroaerak-flash"></div>
+    <div class="huiroaerak-characters">
+      <span class="hanja-char char-hui">喜</span>
+      <span class="hanja-char char-ro">怒</span>
+      <span class="hanja-char char-ae">哀</span>
+      <span class="hanja-char char-rak">樂</span>
+    </div>
+    <div class="huiroaerak-summon-box">
+      <img id="huiroaerakCardImg" class="huiroaerak-card-img" src="/image/heroearak.png" alt="희로애락(喜怒哀樂)" />
+      <div class="huiroaerak-title" id="huiroaerakTitle">✨ 喜 怒 哀 樂 ✨</div>
+      <div class="huiroaerak-subtitle">사대 기운이 하나로 모여 희로애락으로 강림했다!</div>
     </div>
   </div>
 

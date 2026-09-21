@@ -529,6 +529,12 @@ class GameRoom {
     }
     const card = player.findInHand(handInstanceId);
     if (!card || card.type !== 'mob') return { ok: false, error: '몹 카드가 아닙니다.' };
+
+    // 희로애락 4장 합체 소환 가능 판정 (필드 3장 + 손패 4번째 1장)
+    if (this._canAwakenHuiRoAeRak(player, card)) {
+      return this._executeHuiRoAeRakAwaken(player, card);
+    }
+
     if (slot < 0 || slot > 2 || player.field[slot]) return { ok: false, error: '해당 슬롯에 배치할 수 없습니다.' };
 
     // 진화 카드는 직접 배치 불가 — 반드시 evolveCard로만 필드에 나올 수 있음
@@ -539,43 +545,71 @@ class GameRoom {
     player.removeFromHand(handInstanceId);
     player.field[slot] = card;
     this.pushEvent('log', { message: `${player.nickname}이(가) ${card.name}을(를) 필드에 배치했습니다.` });
-    this._checkHuiRoAeRakAwaken(player);
     return { ok: true, events: this.flushEvents() };
   }
 
-  _checkHuiRoAeRakAwaken(player) {
+  _canAwakenHuiRoAeRak(player, handCard) {
+    if (!handCard || handCard.type !== 'mob') return false;
     const componentIds = ['card_hui', 'card_ro', 'card_ae', 'card_rak'];
+    if (!componentIds.includes(handCard.defId)) return false;
+
     const fieldMobs = player.fieldMobs();
+    if (fieldMobs.length !== 3) return false;
+
     const presentComponents = new Set();
     for (const mob of fieldMobs) {
       if (componentIds.includes(mob.defId)) {
         presentComponents.add(mob.defId);
       }
     }
-    if (presentComponents.size >= 3) {
-      // 희생 및 희로애락 소환
-      for (const mob of fieldMobs) {
-        for (const item of mob.attachedItems || []) {
-          player.trash.push(item);
-        }
-        mob.attachedItems = [];
-        player.trash.push(mob);
+
+    return presentComponents.size === 3 && !presentComponents.has(handCard.defId);
+  }
+
+  _executeHuiRoAeRakAwaken(player, handCard) {
+    const fieldMobs = player.fieldMobs();
+
+    // 1. 손패의 4번째 희로애락 재료 카드 제거 후 트레쉬로
+    player.removeFromHand(handCard.instanceId);
+    player.trash.push(handCard);
+
+    // 2. 필드의 3장 카드의 부착 아이템 및 카드 모두 제거 후 트레쉬로
+    for (const mob of fieldMobs) {
+      for (const item of mob.attachedItems || []) {
+        player.trash.push(item);
       }
-      player.field = [null, null, null];
-
-      const huiroaerakDef = ALL_DEFS['card_huiroaerak'];
-      const huiroaerakCard = new CardInstance(huiroaerakDef);
-      player.field[1] = huiroaerakCard; // 중앙 슬롯 배치
-
-      this.pushEvent('specialEvolution', {
-        instanceId: huiroaerakCard.instanceId,
-        name: huiroaerakCard.name,
-        kind: 'huiroaerak_awaken',
-      });
-      this.pushEvent('log', {
-        message: `✨ [희, 로, 애, 락] 중 3가지 기운이 모여 [희로애락]으로 합체 강림 소환되었습니다! (HP: ${huiroaerakCard.hp})`,
-      });
+      mob.attachedItems = [];
+      player.trash.push(mob);
     }
+    player.field = [null, null, null];
+
+    // 3. 희로애락(喜怒哀樂) 소환 (중앙 슬롯 1)
+    const huiroaerakDef = ALL_DEFS['card_huiroaerak'];
+    const huiroaerakCard = new CardInstance(huiroaerakDef);
+    player.field[1] = huiroaerakCard;
+
+    this.pushEvent('specialEvolution', {
+      instanceId: huiroaerakCard.instanceId,
+      name: huiroaerakCard.name,
+      kind: 'huiroaerak_awaken',
+    });
+    this.pushEvent('log', {
+      message: `✨ 아군의 [희(喜), 로(怒), 애(哀), 락(樂)] 4가지 기운이 모두 모여 [희로애락(喜怒哀樂)]으로 합체 강림 소환되었습니다! (총 4장 희생, HP: ${huiroaerakCard.hp})`,
+    });
+
+    return { ok: true, events: this.flushEvents() };
+  }
+
+  awakenHuiRoAeRak(player, handInstanceId) {
+    if (this.phase === PHASE.BATTLE && player !== this.currentPlayer()) {
+      return { ok: false, error: '당신의 턴이 아닙니다.' };
+    }
+    const handCard = player.findInHand(handInstanceId);
+    if (!handCard) return { ok: false, error: '카드를 찾을 수 없습니다.' };
+    if (!this._canAwakenHuiRoAeRak(player, handCard)) {
+      return { ok: false, error: '희, 로, 애, 락 4가지 서로 다른 기운이 필드 3장 + 손패 1장에 모두 모여야 소환할 수 있습니다.' };
+    }
+    return this._executeHuiRoAeRakAwaken(player, handCard);
   }
 
   returnFieldCardToHand(player, instanceId) {

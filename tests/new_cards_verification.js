@@ -78,9 +78,9 @@ console.log('🧪 [테스트 시작] 신규 카드 6종 및 키워드 4종 자�
   console.log('  ✔️ SHIELD 60 보호막 흡수 및 잔여 피해 차감 확인\n');
 })();
 
-// ===== 2. 희로애락 합체 강림 소환 & 턴 시작 오라 검증 =====
+// ===== 2. 희로애락 합체 강림 소환 (필드 3장 + 손패 1장 = 4장 희생) & 턴 시작 오라 검증 =====
 (function testHuiRoAeRakAwakening() {
-  console.log('2. 희, 로, 애 3장 배치 시 [희로애락] 합체 소환 및 오라 검증');
+  console.log('2. 필드 3장 (희, 로, 애) + 손패 4번째 1장 (락) 사용으로 총 4장 희생 후 [희로애락] 합체 소환 및 오라 검증');
   const room = new GameRoom('TEST2');
   const p1 = room.addPlayer('s1', 'P1');
   const p2 = room.addPlayer('s2', 'P2');
@@ -90,23 +90,28 @@ console.log('🧪 [테스트 시작] 신규 카드 6종 및 키워드 4종 자�
   const hui = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_hui']);
   const ro = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_ro']);
   const ae = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_ae']);
+  const rak = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_rak']);
 
-  // P1 손패에 추가 후 배치
-  p1.hand.push(hui, ro, ae);
+  // P1 필드에 희, 로, 애 3장 배치
+  p1.hand.push(hui, ro, ae, rak);
 
   room.placeMobFromHand(p1, hui.instanceId, 0);
   room.placeMobFromHand(p1, ro.instanceId, 1);
-  assert.strictEqual(p1.fieldMobs().length, 2, '2장 배치 완료');
-
-  // 3번째 카드 (ae) 배치 시 자동 합체 소환 감지
   room.placeMobFromHand(p1, ae.instanceId, 2);
+  assert.strictEqual(p1.fieldMobs().length, 3, '필드에 희, 로, 애 3장 배치 완료');
 
-  assert.strictEqual(p1.fieldMobs().length, 1, '희로애락 1장만 필드에 존재해야 함');
+  // 4번째 카드 (락) 손패에서 사용하여 4장 합체 소환 발동!
+  const resAwaken = room.placeMobFromHand(p1, rak.instanceId, 0);
+  assert.strictEqual(resAwaken.ok, true, `희로애락 소환 실패: ${resAwaken.error}`);
+
+  assert.strictEqual(p1.fieldMobs().length, 1, '합체 후 희로애락 1장만 필드에 존재해야 함');
+  assert.strictEqual(p1.trash.length, 4, '손패 1장 + 필드 3장 = 총 4장이 트레쉬로 이동해야 함');
+
   const huiroaerak = p1.field[1];
   assert.notStrictEqual(huiroaerak, null, '중앙 슬롯에 희로애락 소환');
   assert.strictEqual(huiroaerak.defId, 'card_huiroaerak', 'defId card_huiroaerak 확인');
   assert.strictEqual(huiroaerak.hp, 523, '희로애락 체력 523 확인');
-  console.log('  ✔️ 희, 로, 애 3장 필드 배치 시 [희로애락] (HP 523) 특수 소환 성공');
+  console.log('  ✔️ 필드 3장 + 손패 1장 (총 4장 희생)으로 [희로애락] (HP 523) 합체 강림 소환 성공');
 
   // 턴 시작 오라 검증 (HP 80 회복, DMG_UP 2, DMG_DOWN 2, SHIELD 60)
   huiroaerak.hp = 300; // HP 300으로 깎아놓음
