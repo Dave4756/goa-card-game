@@ -615,9 +615,11 @@ class GameRoom {
   returnFieldCardToHand(player, instanceId) {
     const card = player.removeFromField(instanceId);
     if (!card) return { ok: false, error: '카드를 찾을 수 없습니다.' };
-    for (const item of card.attachedItems) player.trash.push(item);
-    card.attachedItems = [];
+    
+    // 💡 [버그 수정] 4조 C 나와 카드로 몹 회수 시 부착 아이템도 카드에 그대로 보존하여 회수!
+    // (다시 필드에 배치하였을 때 회수 전 부착한 아이템이 유지됨)
     player.hand.push(card);
+    this.pushEvent('log', { message: `📦 [${card.name}]이(가) 부착된 아이템과 함께 손패로 회수되었습니다.` });
     return { ok: true, events: this.flushEvents() };
   }
 
@@ -650,6 +652,7 @@ class GameRoom {
       userNickname: player.nickname,
       itemDefId: item.defId,
       itemName: item.name,
+      itemDesc: item.def.desc || item.desc || '',
       itemImage: item.def.image,
       itemType: item.type,
       targetInstanceId: target.instanceId,
@@ -729,6 +732,7 @@ class GameRoom {
       userNickname: player.nickname,
       itemDefId: item.defId,
       itemName: item.name,
+      itemDesc: item.def.desc || item.desc || '',
       itemImage: item.def.image,
       itemType: item.type,
       targetInstanceId: targetCard ? targetCard.instanceId : null,

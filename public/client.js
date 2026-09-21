@@ -525,7 +525,11 @@ function _processEvent(e) {
   }
   if (e.type === 'skillCast') {
     triggerSkillVfx(e.payload);
-    return 1500; // 공격/스킬 VFX 애니메이션(컷인, 투사체, 타격)이 완료된 후 턴 전환 이벤트 진행
+    const motion = e.payload ? e.payload.motion : '';
+    if (motion === 'narak_blast' || motion === 'solar_beam' || motion === 'bugwang_smash' || motion === 'huiroaerak_aoe') {
+      return 2600; // 궁극 연출 2.6초 동안 여유롭게 감상 대기
+    }
+    return 1800;
   }
   if (e.type === 'itemUsed') {
     showItemUsePopup(e.payload);
@@ -762,11 +766,78 @@ function triggerFieldKeywordVfx(keyword, ownerNickname) {
 
 
 
+// ===== 아이템 사용 팝업 & 효과 텍스트 오버레이 =====
+function showItemUsePopup(payload) {
+  const { userNickname, itemDefId, itemName, itemDesc, itemImage, itemType, targetName } = payload;
+  
+  // 사운드 재생
+  playItemUseSound(itemType);
+
+  const popup = document.createElement('div');
+  popup.className = 'item-use-popup-overlay';
+
+  const cardDef = allCardsMap[itemDefId] || {};
+  const descText = itemDesc || cardDef.desc || '아이템 발동!';
+  const targetText = targetName ? ` ➔ [ ${targetName} ]` : '';
+
+  popup.innerHTML = `
+    <div class="item-use-popup-box">
+      <div class="item-use-user">🎁 ${userNickname} 님이 아이템 사용!</div>
+      <div class="item-use-main">
+        <img src="/${itemImage || cardDef.image || 'backpack.jpeg'}" class="item-use-img" onerror="this.src='/backpack.jpeg'" />
+        <div class="item-use-info">
+          <div class="item-use-title">[ ${itemName} ]${targetText}</div>
+          <div class="item-use-desc">✨ ${descText}</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 2200);
+
+  // 💡 [4조 C 나와~] 특수 회수 연출
+  if (itemDefId === 'item_4jo') {
+    trigger4JoRecallAnim(targetName);
+  }
+}
+
+// 💡 4조 C 나와~ 카드 회수 특수 이펙트
+function trigger4JoRecallAnim(targetName) {
+  const container = document.createElement('div');
+  container.className = 'vfx-4jo-container';
+  const banner = document.createElement('div');
+  banner.className = 'vfx-4jo-banner';
+  banner.textContent = targetName ? `📢 4조 C 나와! (${targetName} 회수)` : `📢 4조 C 나와!`;
+  container.appendChild(banner);
+  document.body.appendChild(container);
+  setTimeout(() => container.remove(), 2200);
+}
+
+function playItemUseSound(itemType) {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const now = ctx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, now);
+    osc.frequency.exponentialRampToValueAtTime(880, now + 0.3);
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+    osc.start(now);
+    osc.stop(now + 0.35);
+  } catch (e) {}
+}
+
 // ===== 스킬 시전 애니메이션 & 비주얼 VFX & 사운드 =====
 function triggerSkillVfx(payload) {
   const { sourceCardId, sourceCardName, targetCardId, targetCardName, skillId, skillName, defId, isAoE, motion } = payload;
 
-  // 1. 상단 컷인 배너 노출
+  // 1. 상단 컷인 배너 노출 (여유있게 2.2초간 표시)
   const banner = document.getElementById('skillCastBanner');
   const sourceEl2 = document.getElementById('skillBannerSource');
   const nameEl2 = document.getElementById('skillBannerName');
@@ -776,170 +847,178 @@ function triggerSkillVfx(payload) {
     banner.classList.remove('active');
     void banner.offsetWidth;
     banner.classList.add('active');
-    setTimeout(() => banner.classList.remove('active'), 1400);
+    setTimeout(() => banner.classList.remove('active'), 2200);
   }
 
-  // 2. motion 필드 우선 사용 (cards.json 기준), 없으면 defId로 추론
-  const PROJECTILE_MOTIONS = new Set(['lightning', 'water', 'fire', 'curse', 'beam']);
-  const ATTACK_MOTIONS = new Set(['tackle', 'slash', 'lightning', 'water', 'fire', 'earthquake', 'curse', 'beam']);
-  const HEAL_MOTIONS = new Set(['heal']);
-  const SLEEP_MOTIONS = new Set(['sleep']);
+  // 💡 1-1. 스킬 발동 시 스킬 이름 한글 타이틀 텍스트 오버레이 함께 표출!
+  const skillTitleOverlay = document.createElement('div');
+  skillTitleOverlay.className = 'vfx-skill-title-overlay';
+  skillTitleOverlay.innerHTML = `<div class="vfx-skill-title-text">✨ [ ${skillName} ] 💥</div>`;
+  document.body.appendChild(skillTitleOverlay);
+  setTimeout(() => skillTitleOverlay.remove(), 1800);
 
-  let effectType = motion || 'slash'; // cards.json의 motion 값 사용
+  // 2. motion 필드 우선 사용 (cards.json 기준)
+  let effectType = motion || 'slash';
 
   // 사운드 재생
   playSkillSound(effectType);
 
-  // 3. 강한 스킬 화면 진동
-  if (effectType === 'beam' || effectType === 'earthquake' || isAoE) {
+  // 3. 강한 스킬 화면 진동 (0.7초)
+  const HEAVY_MOTIONS = new Set(['solar_beam', 'beam', 'narak_blast', 'bugwang_smash', 'tsunami_wave', 'million_volts', 'bald_disaster', 'disaster_doom', 'huiroaerak_aoe']);
+  if (HEAVY_MOTIONS.has(effectType) || isAoE) {
     document.body.classList.add('screen-shake');
-    setTimeout(() => document.body.classList.remove('screen-shake'), 480);
+    setTimeout(() => document.body.classList.remove('screen-shake'), 750);
   }
 
   // 4. 시전자 카드 & 피격 카드 DOM 찾기
-  const srcEl = sourceCardId
-    ? document.querySelector(`[data-instance-id="${sourceCardId}"]`) : null;
-  const tgtEl = targetCardId
-    ? document.querySelector(`[data-instance-id="${targetCardId}"]`)
-    : (sourceCardId ? document.querySelector(`[data-instance-id="${sourceCardId}"]`) : null);
+  const srcEl = sourceCardId ? document.querySelector(`[data-instance-id="${sourceCardId}"]`) : null;
+  const tgtEl = targetCardId ? document.querySelector(`[data-instance-id="${targetCardId}"]`) : null;
 
-  // 5. 빔 전체화면 이펙트
-  if (effectType === 'beam') {
+  // 💡 [클라이언트 동기화 핵심 수정] 시전자(srcEl)가 내 필드인가 상대 필드인가 판단하여 대상 필드 스코프 결정
+  const isSrcMine = srcEl ? srcEl.closest('#myField') !== null : true;
+  const enemyFieldSel = isSrcMine ? '#oppField' : '#myField';
+  const myFieldSel = isSrcMine ? '#myField' : '#oppField';
+
+  if (srcEl) {
+    srcEl.classList.add('card-strike-forward');
+    setTimeout(() => srcEl.classList.remove('card-strike-forward'), 750);
+  }
+
+  // 5. [솔라빔] 극태 광선 이펙트 (1.6초)
+  if (effectType === 'solar_beam' || effectType === 'beam') {
     const beam = document.createElement('div');
     beam.className = 'vfx-solar-beam';
     document.body.appendChild(beam);
-    setTimeout(() => beam.remove(), 800);
-    if (srcEl) { srcEl.classList.add('card-strike-forward'); setTimeout(() => srcEl.classList.remove('card-strike-forward'), 500); }
+    setTimeout(() => beam.remove(), 1600);
+
+    const targets = isAoE ? [...document.querySelectorAll(`${enemyFieldSel} .card:not(.dead)`)] : (tgtEl ? [tgtEl] : (srcEl ? [srcEl] : []));
+    targets.forEach(t => {
+      t.classList.add('card-hit-recoil');
+      applyVfxToElement(t, 'solar_beam');
+      setTimeout(() => t.classList.remove('card-hit-recoil'), 1200);
+    });
     return;
   }
 
-  // 6. 힐/버프 모션
+  // 6. [나락으로 꺼져라] 奈落 선명한 붉은 한자 폭발 이펙트 (2.5초 선명 보장)
+  if (effectType === 'narak_blast') {
+    const narakBg = document.createElement('div');
+    narakBg.className = 'vfx-narak-container';
+
+    const hanja = document.createElement('div');
+    hanja.className = 'vfx-narak-hanja';
+    hanja.textContent = '奈 落';
+
+    const subtext = document.createElement('div');
+    subtext.className = 'vfx-narak-subtext';
+    subtext.textContent = '〔 나락으로 꺼져라 〕';
+
+    narakBg.appendChild(hanja);
+    narakBg.appendChild(subtext);
+    document.body.appendChild(narakBg);
+    setTimeout(() => narakBg.remove(), 2500);
+
+    const targets = tgtEl ? [tgtEl] : [...document.querySelectorAll(`${enemyFieldSel} .card:not(.dead)`)];
+    targets.forEach(t => {
+      t.classList.add('card-hit-recoil');
+      applyVfxToElement(t, 'narak_blast');
+      setTimeout(() => t.classList.remove('card-hit-recoil'), 1500);
+    });
+    return;
+  }
+
+  // 7. [내가 시발 부광고의 전장연이다!!!] 3색 아라 강타 (1.5초)
+  if (effectType === 'bugwang_smash') {
+    const container = document.createElement('div');
+    container.className = 'vfx-bugwang-container';
+    
+    const blueOrb = document.createElement('div');
+    blueOrb.className = 'vfx-bugwang-orb vfx-bugwang-blue';
+    const yellowOrb = document.createElement('div');
+    yellowOrb.className = 'vfx-bugwang-orb vfx-bugwang-yellow';
+    const redOrb = document.createElement('div');
+    redOrb.className = 'vfx-bugwang-orb vfx-bugwang-red';
+
+    container.appendChild(blueOrb);
+    container.appendChild(yellowOrb);
+    container.appendChild(redOrb);
+    document.body.appendChild(container);
+
+    setTimeout(() => {
+      container.remove();
+      const targets = tgtEl ? [tgtEl] : [...document.querySelectorAll(`${enemyFieldSel} .card:not(.dead)`)];
+      targets.forEach(t => {
+        t.classList.add('card-hit-recoil');
+        applyVfxToElement(t, 'bugwang_smash');
+        setTimeout(() => t.classList.remove('card-hit-recoil'), 1200);
+      });
+    }, 1400);
+    return;
+  }
+
+  // 8. [희로애락 전체 강림] 喜怒哀樂 4개 한자 수집 이펙트 (1.5초)
+  if (effectType === 'huiroaerak_aoe') {
+    const container = document.createElement('div');
+    container.className = 'vfx-huiroaerak-container';
+    const symbols = [
+      { text: '喜', cls: 'vfx-symbol-hui' },
+      { text: '怒', cls: 'vfx-symbol-ro' },
+      { text: '哀', cls: 'vfx-symbol-ae' },
+      { text: '樂', cls: 'vfx-symbol-rak' }
+    ];
+    symbols.forEach(s => {
+      const el = document.createElement('div');
+      el.className = `vfx-hanja-symbol ${s.cls}`;
+      el.textContent = s.text;
+      container.appendChild(el);
+    });
+    document.body.appendChild(container);
+
+    setTimeout(() => {
+      container.remove();
+      document.querySelectorAll(`${enemyFieldSel} .card:not(.dead)`).forEach(el => {
+        el.classList.add('card-hit-recoil');
+        applyVfxToElement(el, 'huiroaerak_aoe');
+        setTimeout(() => el.classList.remove('card-hit-recoil'), 1200);
+      });
+    }, 1400);
+    return;
+  }
+
+  // 9. 힐/버프 모션
+  const HEAL_MOTIONS = new Set(['heal', 'love_heal', 'solar_heal_shield', 'joy_heal', 'old_heal', 'battery_charge', 'photosynthesis_charge', 'sunny_sunshine', 'electric_field_cast', 'anger_buff', 'sorrow_buff', 'pleasure_buff', 'engine_rev']);
   if (HEAL_MOTIONS.has(effectType)) {
     [srcEl, tgtEl].forEach(el => {
       if (el) {
         el.classList.add('card-buff-float');
-        applyVfxToElement(el, 'heal');
-        setTimeout(() => el.classList.remove('card-buff-float'), 800);
+        applyVfxToElement(el, effectType);
+        setTimeout(() => el.classList.remove('card-buff-float'), 1300);
       }
     });
     return;
   }
 
-  // 7. 수면 모션
-  if (SLEEP_MOTIONS.has(effectType)) {
-    if (tgtEl) {
-      tgtEl.classList.add('card-buff-float');
-      applyVfxToElement(tgtEl, 'sleep');
-      setTimeout(() => tgtEl.classList.remove('card-buff-float'), 800);
-    }
-    return;
-  }
+  // 10. 전양 필드 / 상대 필드 지정 타격 연출
+  const targetEls = (effectType === 'disaster_doom')
+    ? [...document.querySelectorAll('#myField .card:not(.dead), #oppField .card:not(.dead)')]
+    : (isAoE ? [...document.querySelectorAll(`${enemyFieldSel} .card:not(.dead)`)] : (tgtEl ? [tgtEl] : (srcEl ? [srcEl] : [])));
 
-  // 8. 지진 모션 (전체 AoE 진동)
-  if (effectType === 'earthquake') {
-    const allCards = document.querySelectorAll('#oppField .card:not(.dead), #myField .card:not(.dead)');
-    allCards.forEach(el => {
-      el.classList.add('card-hit-recoil');
-      applyVfxToElement(el, 'fire');
-      setTimeout(() => el.classList.remove('card-hit-recoil'), 600);
-    });
-    return;
-  }
-
-  // 9. 투사체 공격 모션 (lightning/water/fire/curse)
-  if (PROJECTILE_MOTIONS.has(effectType) && srcEl && (tgtEl || isAoE)) {
-    // 시전자 전진 모션
-    if (srcEl) {
-      srcEl.classList.add('card-strike-forward');
-      setTimeout(() => srcEl.classList.remove('card-strike-forward'), 400);
-    }
-
-    const targetEls = isAoE
-      ? [...document.querySelectorAll('#oppField .card:not(.dead)')]
-      : (tgtEl ? [tgtEl] : []);
-
-    targetEls.forEach((target, i) => {
-      setTimeout(() => {
-        // 투사체 생성
-        if (srcEl) {
-          const proj = document.createElement('div');
-          proj.className = `projectile-vfx projectile-${effectType}`;
-          document.body.appendChild(proj);
-
-          const srcRect = srcEl.getBoundingClientRect();
-          const tgtRect = target.getBoundingClientRect();
-          const startX = srcRect.left + srcRect.width / 2;
-          const startY = srcRect.top + srcRect.height / 2;
-          const endX = tgtRect.left + tgtRect.width / 2;
-          const endY = tgtRect.top + tgtRect.height / 2;
-
-          proj.style.left = startX + 'px';
-          proj.style.top = startY + 'px';
-          proj.style.transform = 'translate(-50%, -50%)';
-          proj.style.position = 'fixed';
-          proj.style.zIndex = '9999';
-
-          const dx = endX - startX;
-          const dy = endY - startY;
-          const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-          proj.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
-
-          // 애니메이션: startX,Y → endX,Y
-          proj.animate([
-            { left: startX + 'px', top: startY + 'px', opacity: 1 },
-            { left: endX + 'px', top: endY + 'px', opacity: 0.85 }
-          ], { duration: 350, easing: 'ease-in', fill: 'forwards' });
-
-          setTimeout(() => {
-            proj.remove();
-            // 피격 반동
-            target.classList.add('card-hit-recoil');
-            applyVfxToElement(target, effectType);
-            setTimeout(() => target.classList.remove('card-hit-recoil'), 550);
-          }, 340);
-        } else {
-          // srcEl 없으면 바로 피격
-          target.classList.add('card-hit-recoil');
-          applyVfxToElement(target, effectType);
-          setTimeout(() => target.classList.remove('card-hit-recoil'), 550);
-        }
-      }, i * 120);
-    });
-    return;
-  }
-
-  // 10. 기본 근접 공격 (tackle/slash)
-  if (srcEl) {
-    srcEl.classList.add('card-strike-forward');
+  targetEls.forEach((target, i) => {
     setTimeout(() => {
-      srcEl.classList.remove('card-strike-forward');
-      if (isAoE) {
-        document.querySelectorAll('#oppField .card:not(.dead)').forEach(el => {
-          el.classList.add('card-hit-recoil');
-          applyVfxToElement(el, effectType);
-          setTimeout(() => el.classList.remove('card-hit-recoil'), 550);
-        });
-      } else if (tgtEl) {
-        tgtEl.classList.add('card-hit-recoil');
-        applyVfxToElement(tgtEl, effectType);
-        setTimeout(() => tgtEl.classList.remove('card-hit-recoil'), 550);
-      }
-    }, 250);
-  }
+      target.classList.add('card-hit-recoil');
+      applyVfxToElement(target, effectType);
+      setTimeout(() => target.classList.remove('card-hit-recoil'), 1200);
+    }, i * 180);
+  });
 }
 
 function applyVfxToElement(el, effectType) {
   if (!el) return;
   const vfx = document.createElement('div');
   vfx.className = `vfx-overlay vfx-${effectType}`;
-  if (effectType === 'sleep') {
-    vfx.textContent = '💤 Z z z';
-  }
   el.appendChild(vfx);
-  setTimeout(() => vfx.remove(), 700);
+  setTimeout(() => vfx.remove(), 1400);
 }
-
-
 
 function playSkillSound(effectType) {
   try {
@@ -952,52 +1031,62 @@ function playSkillSound(effectType) {
     gain.connect(ctx.destination);
     const now = ctx.currentTime;
 
-    if (effectType === 'lightning') {
+    if (effectType === 'narak_blast') {
       osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(800, now);
-      osc.frequency.linearRampToValueAtTime(180, now + 0.3);
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-      osc.start(now);
-      osc.stop(now + 0.3);
-    } else if (effectType === 'water') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(300, now);
-      osc.frequency.linearRampToValueAtTime(500, now + 0.2);
-      osc.frequency.linearRampToValueAtTime(150, now + 0.45);
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
-      osc.start(now);
-      osc.stop(now + 0.45);
-    } else if (effectType === 'fire') {
-      osc.type = 'triangle';
       osc.frequency.setValueAtTime(140, now);
-      osc.frequency.exponentialRampToValueAtTime(35, now + 0.4);
-      gain.gain.setValueAtTime(0.35, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+      osc.frequency.exponentialRampToValueAtTime(30, now + 0.7);
+      gain.gain.setValueAtTime(0.5, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
       osc.start(now);
-      osc.stop(now + 0.4);
-    } else if (effectType === 'beam') {
+      osc.stop(now + 0.7);
+    } else if (effectType === 'bugwang_smash') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.setValueAtTime(554, now + 0.15);
+      osc.frequency.setValueAtTime(659, now + 0.3);
+      osc.frequency.linearRampToValueAtTime(120, now + 0.65);
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.65);
+      osc.start(now);
+      osc.stop(now + 0.65);
+    } else if (effectType === 'solar_beam' || effectType === 'beam') {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(300, now);
-      osc.frequency.exponentialRampToValueAtTime(1300, now + 0.5);
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+      osc.frequency.exponentialRampToValueAtTime(1600, now + 0.6);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.65);
       osc.start(now);
-      osc.stop(now + 0.6);
-    } else if (effectType === 'heal') {
+      osc.stop(now + 0.65);
+    } else if (effectType.includes('water') || effectType.includes('tsunami') || effectType.includes('hydro')) {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.linearRampToValueAtTime(520, now + 0.2);
+      osc.frequency.linearRampToValueAtTime(140, now + 0.5);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      osc.start(now);
+      osc.stop(now + 0.5);
+    } else if (effectType.includes('lightning') || effectType.includes('volt') || effectType.includes('discharge')) {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(900, now);
+      osc.frequency.linearRampToValueAtTime(150, now + 0.35);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    } else if (effectType.includes('heal') || effectType.includes('sunshine') || effectType.includes('charge')) {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(523.25, now);
       osc.frequency.setValueAtTime(659.25, now + 0.1);
       osc.frequency.setValueAtTime(783.99, now + 0.2);
-      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.setValueAtTime(0.3, now);
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
       osc.start(now);
       osc.stop(now + 0.45);
     } else {
       osc.type = 'square';
-      osc.frequency.setValueAtTime(220, now);
-      osc.frequency.exponentialRampToValueAtTime(70, now + 0.25);
+      osc.frequency.setValueAtTime(240, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.25);
       gain.gain.setValueAtTime(0.3, now);
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
       osc.start(now);
@@ -1208,46 +1297,48 @@ function render(state) {
   }
 
   // 배치 단계 UI 및 준비완료 피드백
-  const placementView = document.getElementById('placementView');
+  const placementControls = document.getElementById('placementControlsInField');
   if (state.phase === 'placement') {
-    placementView.style.display = 'block';
+    if (placementControls) placementControls.style.display = 'flex';
 
     const myBadge = document.getElementById('myPlacementBadge');
     const oppBadge = document.getElementById('oppPlacementBadge');
     const confirmBtn = document.getElementById('confirmPlacementBtn');
 
     if (state.me.placementReady) {
-      myBadge.textContent = '내 상태: 준비 완료 ✔️';
-      myBadge.className = 'ready-badge done';
-      confirmBtn.disabled = true;
-      confirmBtn.style.background = '#059669';
-      confirmBtn.style.cursor = 'default';
-      confirmBtn.textContent = '✔️ 준비 완료 (상대방 기다리는 중...)';
+      if (myBadge) { myBadge.textContent = '내 상태: 준비 완료 ✔️'; myBadge.className = 'ready-badge done'; }
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.style.background = '#059669';
+        confirmBtn.style.cursor = 'default';
+        confirmBtn.textContent = '✔️ 준비 완료 (상대방 기다리는 중...)';
+      }
     } else {
-      myBadge.textContent = '내 상태: 배치 중 ⏳';
-      myBadge.className = 'ready-badge';
-      confirmBtn.disabled = false;
-      confirmBtn.style.background = 'var(--primary)';
-      confirmBtn.style.cursor = 'pointer';
-      confirmBtn.textContent = '✔️ 배치 완료 (준비)';
+      if (myBadge) { myBadge.textContent = '내 상태: 배치 중 ⏳'; myBadge.className = 'ready-badge'; }
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.style.background = 'var(--primary)';
+        confirmBtn.style.cursor = 'pointer';
+        confirmBtn.textContent = '✔️ 배치 완료 (준비)';
+      }
     }
 
     if (state.opponent) {
-      if (state.opponent.placementReady) {
-        oppBadge.textContent = '상대 상태: 준비 완료 ✔️';
-        oppBadge.className = 'ready-badge done';
-      } else {
-        oppBadge.textContent = '상대 상태: 배치 중 ⏳';
-        oppBadge.className = 'ready-badge';
+      if (oppBadge) {
+        if (state.opponent.placementReady) {
+          oppBadge.textContent = '상대 상태: 준비 완료 ✔️';
+          oppBadge.className = 'ready-badge done';
+        } else {
+          oppBadge.textContent = '상대 상태: 배치 중 ⏳';
+          oppBadge.className = 'ready-badge';
+        }
       }
-    } else {
+    } else if (oppBadge) {
       oppBadge.textContent = '상대 상태: 대기 중 ⏳';
       oppBadge.className = 'ready-badge';
     }
-
-    renderPlacement(state);
   } else {
-    placementView.style.display = 'none';
+    if (placementControls) placementControls.style.display = 'none';
   }
 
   renderHand(state);
@@ -1525,6 +1616,13 @@ function renderField(containerId, field, isEnemy, state) {
       const slot = document.createElement('div');
       slot.className = 'field-slot';
       slot.textContent = `슬롯 ${i + 1}`;
+      slot.style.cursor = 'pointer';
+      slot.onclick = () => {
+        if (placingCard) {
+          socket.emit('placeMob', { handInstanceId: placingCard, slot: i });
+          placingCard = null;
+        }
+      };
       slot.addEventListener('dragover', (e) => { e.preventDefault(); slot.classList.add('drop-highlight'); });
       slot.addEventListener('dragleave', () => slot.classList.remove('drop-highlight'));
       slot.addEventListener('drop', (e) => {

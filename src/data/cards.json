@@ -8,8 +8,8 @@
       "image": "j.png",
       "trait": null,
       "skills": [
-        { "id": "s1", "name": "성군인가? 폭군인가?", "desc": "40 데미지", "value": 40, "targetType": "enemy", "motion": "tackle" },
-        { "id": "s2", "name": "학교를 왜 다니나? 사랑과 존중을 받기 위해서야", "desc": "자가회복 40", "value": 40, "targetType": "none", "motion": "heal" }
+        { "id": "s1", "name": "성군인가? 폭군인가?", "desc": "40 데미지", "value": 40, "targetType": "enemy", "motion": "king_slash" },
+        { "id": "s2", "name": "학교를 왜 다니나? 사랑과 존중을 받기 위해서야", "desc": "자가회복 40", "value": 40, "targetType": "none", "motion": "love_heal" }
       ]
     },
     {
@@ -20,7 +20,7 @@
       "image": "fish_j.png",
       "trait": null,
       "skills": [
-        { "id": "s1", "name": "파닥거리기", "desc": "10 데미지", "value": 10, "targetType": "enemy", "motion": "water" },
+        { "id": "s1", "name": "파닥거리기", "desc": "10 데미지", "value": 10, "targetType": "enemy", "motion": "fish_splash" },
         { "id": "s2", "name": "회피", "desc": "자신에게 공격 스킬 사용 시 동전을 던져 앞면이면 무효", "targetType": "passive" }
       ]
     },
@@ -33,8 +33,8 @@
       "evolvesFrom": "card_inmyeoneo",
       "trait": { "id": "evolution", "name": "진화", "desc": "배치한 지 2턴 지난 인면어 전장연에서 진화" },
       "skills": [
-        { "id": "s1", "name": "파도 일으키기", "desc": "50 데미지, 상대 필드 전체에게 피해", "value": 50, "targetType": "none", "motion": "water" },
-        { "id": "s2", "name": "하이드로펌프", "desc": "200 데미지", "value": 200, "targetType": "enemy", "motion": "water" }
+        { "id": "s1", "name": "파도 일으키기", "desc": "50 데미지, 상대 필드 전체에게 피해", "value": 50, "targetType": "none", "motion": "tsunami_wave" },
+        { "id": "s2", "name": "하이드로펌프", "desc": "200 데미지", "value": 200, "targetType": "enemy", "motion": "hydro_pump" }
       ]
     },
 
@@ -46,8 +46,8 @@
       "image": "snorlax_j.png",
       "trait": null,
       "skills": [
-        { "id": "s1", "name": "누르기", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "earthquake" },
-        { "id": "s2", "name": "하품", "desc": "상대를 수면 상태로 만든다", "targetType": "enemy", "motion": "sleep" }
+        { "id": "s1", "name": "누르기", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "snorlax_press" },
+        { "id": "s2", "name": "하품", "desc": "상대를 수면 상태로 만든다", "targetType": "enemy", "motion": "yawn_sleep" }
       ]
     },
     {
@@ -58,8 +58,8 @@
       "image": "robat.png",
       "trait": { "id": "china_battery", "name": "중국산 베터리", "desc": "자신의 [과충전] 1스택당 받는 데미지 +10" },
       "skills": [
-        { "id": "s1", "name": "충전하기", "desc": "자신에게 [과충전] 1스택 부여", "targetType": "none", "motion": "lightning" },
-        { "id": "s2", "name": "방전", "desc": "80 데미지, [과충전] 1스택당 40 추가", "value": 80, "targetType": "enemy", "motion": "lightning" }
+        { "id": "s1", "name": "충전하기", "desc": "자신에게 [과충전] 1스택 부여", "targetType": "none", "motion": "battery_charge" },
+        { "id": "s2", "name": "방전", "desc": "80 데미지, [과충전] 1스택당 40 추가", "value": 80, "targetType": "enemy", "motion": "giga_discharge" }
       ]
     },
     {
@@ -70,8 +70,8 @@
       "image": "hair.png",
       "trait": { "id": "hair_redirect", "name": "흘러내린 머리카락", "desc": "양옆 아군이 입는 피해의 절반을 자신이 대신 받는다" },
       "skills": [
-        { "id": "s1", "name": "넌 탈모 안걸릴거 같지?", "desc": "동전 앞면 시 상대에게 [혼란] 부여", "targetType": "enemy", "motion": "curse" },
-        { "id": "s2", "name": "머리 다시 올리기", "desc": "40 데미지", "value": 40, "targetType": "enemy", "motion": "tackle" }
+        { "id": "s1", "name": "넌 탈모 안걸릴거 같지?", "desc": "동전 앞면 시 상대에게 [혼란] 부여", "targetType": "enemy", "motion": "hair_curse" },
+        { "id": "s2", "name": "머리 다시 올리기", "desc": "40 데미지", "value": 40, "targetType": "enemy", "motion": "hair_lift" }
       ]
     },
     {
@@ -82,8 +82,8 @@
       "image": "pikachu_jh.png",
       "trait": { "id": "electric_rat", "name": "전기쥐", "desc": "매턴 양옆 아군과 자신에게 [과충전] 1스택 부여" },
       "skills": [
-        { "id": "s1", "name": "일렉트로필드", "desc": "아군 필드에 [전기장] 설치", "targetType": "none", "motion": "lightning" },
-        { "id": "s2", "name": "백만볼트", "desc": "60 데미지 + 아군 필드 전체 [과충전]스택 합*20 (전기장 있으면 2배)", "value": 60, "targetType": "enemy", "motion": "lightning" }
+        { "id": "s1", "name": "일렉트로필드", "desc": "아군 필드에 [전기장] 설치", "targetType": "none", "motion": "electric_field_cast" },
+        { "id": "s2", "name": "백만볼트", "desc": "60 데미지 + 아군 필드 전체 [과충전]스택 합*20 (전기장 있으면 2배)", "value": 60, "targetType": "enemy", "motion": "million_volts" }
       ]
     },
     {
@@ -94,8 +94,8 @@
       "image": "fireman.png",
       "trait": { "id": "best_driver", "name": "베스트 드라이버", "desc": "매턴 자신에게 [과열된 연료] 1스택 부여" },
       "skills": [
-        { "id": "s1", "name": "시동 걸기", "desc": "30 데미지, 자신의 주는 피해 영구 +40, [과열된 연료]*15 만큼 회복(최대 150)", "value": 30, "targetType": "enemy", "motion": "fire" },
-        { "id": "s2", "name": "폭주한판", "desc": "60 데미지 + [과열된 연료]당 20 추가", "value": 60, "targetType": "enemy", "motion": "tackle" }
+        { "id": "s1", "name": "시동 걸기", "desc": "30 데미지, 자신의 주는 피해 영구 +40, [과열된 연료]*15 만큼 회복(최대 150)", "value": 30, "targetType": "enemy", "motion": "engine_rev" },
+        { "id": "s2", "name": "폭주한판", "desc": "60 데미지 + [과열된 연료]당 20 추가", "value": 60, "targetType": "enemy", "motion": "biker_rush" }
       ]
     },
     {
@@ -106,8 +106,8 @@
       "image": "gong.png",
       "trait": null,
       "skills": [
-        { "id": "s1", "name": "포효", "desc": "20 데미지, 상대의 다음 공격 절반으로 감소", "value": 20, "targetType": "enemy", "motion": "earthquake" },
-        { "id": "s2", "name": "물기", "desc": "100 데미지", "value": 100, "targetType": "enemy", "motion": "slash" }
+        { "id": "s1", "name": "포효", "desc": "20 데미지, 상대의 다음 공격 절반으로 감소", "value": 20, "targetType": "enemy", "motion": "dino_roar" },
+        { "id": "s2", "name": "물기", "desc": "100 데미지", "value": 100, "targetType": "enemy", "motion": "dino_bite" }
       ]
     },
     {
@@ -118,10 +118,10 @@
       "image": "sunflower.png",
       "trait": { "id": "photosynthesis", "name": "광합성", "desc": "매턴 자신의 hp 50 회복, 매턴 회복량/최대체력 +10씩 누적" },
       "skills": [
-        { "id": "s1", "name": "줄기로 때리기", "desc": "30 데미지", "value": 30, "targetType": "enemy", "motion": "slash" },
-        { "id": "s2", "name": "솔라빔 준비", "desc": "2턴간 스킬 사용 불가, 이후 상대 필드 최저 hp에게 [솔라빔] 300 시전", "targetType": "none", "motion": "heal" }
+        { "id": "s1", "name": "줄기로 때리기", "desc": "30 데미지", "value": 30, "targetType": "enemy", "motion": "vine_whip" },
+        { "id": "s2", "name": "솔라빔 준비", "desc": "2턴간 스킬 사용 불가, 이후 상대 필드 최저 hp에게 [솔라빔] 300 시전", "targetType": "none", "motion": "photosynthesis_charge" }
       ],
-      "specialSkill": { "id": "solar_beam", "name": "솔라빔", "value": 300, "motion": "beam" }
+      "specialSkill": { "id": "solar_beam", "name": "솔라빔", "value": 300, "motion": "solar_beam" }
     },
     {
       "id": "card_gisa",
@@ -131,7 +131,7 @@
       "image": "knight.png",
       "trait": { "id": "chivalry", "name": "기사도 정신", "desc": "자신의 필드에 몹이 1장뿐일 때 주는 피해 x2, 받는 피해 절반" },
       "skills": [
-        { "id": "s1", "name": "칼로 배기", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "slash" }
+        { "id": "s1", "name": "칼로 배기", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "knight_slash" }
       ]
     },
     {
@@ -143,8 +143,8 @@
       "hidden": true,
       "trait": { "id": "acting", "name": "연기력", "desc": "주는 피해의 30%를 회복" },
       "skills": [
-        { "id": "s1", "name": "세 가지 힘이 느껴지나?", "desc": "상대 필드 전체에게 60 데미지", "value": 60, "targetType": "none", "motion": "lightning" },
-        { "id": "s2", "name": "내가 시발 부광고의 전장연이다!!!", "desc": "180 데미지", "value": 180, "targetType": "enemy", "motion": "earthquake" }
+        { "id": "s1", "name": "세 가지 힘이 느껴지나?", "desc": "상대 필드 전체에게 60 데미지", "value": 60, "targetType": "none", "motion": "tri_element_wave" },
+        { "id": "s2", "name": "내가 시발 부광고의 전장연이다!!!", "desc": "180 데미지", "value": 180, "targetType": "enemy", "motion": "bugwang_smash" }
       ]
     },
     {
@@ -156,8 +156,8 @@
       "deckLimit": 1,
       "trait": { "id": "predation", "name": "포식", "desc": "자신의 필드 위 몹 카드 1장을 포식(트레쉬)함, 성공 시 hp 100 회복 (턴 소모 없음)" },
       "skills": [
-        { "id": "s1", "name": "대머리가 온다", "desc": "200 데미지", "value": 200, "targetType": "enemy", "motion": "tackle" },
-        { "id": "s2", "name": "시발 도망쳐!", "desc": "양측 필드 전체 몹에게 영구 50 데미지, 사용 시 이 카드 외 회복 불가", "targetType": "none", "motion": "earthquake" }
+        { "id": "s1", "name": "대머리가 온다", "desc": "200 데미지", "value": 200, "targetType": "enemy", "motion": "bald_disaster" },
+        { "id": "s2", "name": "시발 도망쳐!", "desc": "양측 필드 전체 몹에게 영구 50 데미지, 사용 시 이 카드 외 회복 불가", "targetType": "none", "motion": "disaster_doom" }
       ]
     },
     {
@@ -168,8 +168,8 @@
       "image": "runingman.png",
       "trait": { "id": "run_dont_walk", "name": "난 걷지 않고 뛰어", "desc": "같은 스킬 연속 사용 시마다 데미지/회복 +20" },
       "skills": [
-        { "id": "s1", "name": "내가 군인 시절 삽질 장인이었어!", "desc": "20 데미지, 직전 턴 동일 스킬 사용 시 +40", "value": 20, "targetType": "enemy", "motion": "slash" },
-        { "id": "s2", "name": "늙어서 힘들어....", "desc": "자가회복 50, 직전 턴 동일 스킬 사용 시 +40", "value": 50, "targetType": "none", "motion": "heal" }
+        { "id": "s1", "name": "내가 군인 시절 삽질 장인이었어!", "desc": "20 데미지, 직전 턴 동일 스킬 사용 시 +40", "value": 20, "targetType": "enemy", "motion": "shovel_strike" },
+        { "id": "s2", "name": "늙어서 힘들어....", "desc": "자가회복 50, 직전 턴 동일 스킬 사용 시 +40", "value": 50, "targetType": "none", "motion": "old_heal" }
       ]
     },
     {
@@ -180,8 +180,8 @@
       "image": "korean.png",
       "trait": { "id": "yellow_belt", "name": "나 태권도 노란띠야!", "desc": "받는 피해 -50%" },
       "skills": [
-        { "id": "s1", "name": "정권지르기", "desc": "30 데미지", "value": 30, "targetType": "enemy", "motion": "tackle" },
-        { "id": "s2", "name": "뒤돌려차기", "desc": "80 데미지, 동전 뒷면 시 자신에게 [혼란]", "value": 80, "targetType": "enemy", "motion": "slash" }
+        { "id": "s1", "name": "정권지르기", "desc": "30 데미지", "value": 30, "targetType": "enemy", "motion": "taekwondo_punch" },
+        { "id": "s2", "name": "뒤돌려차기", "desc": "80 데미지, 동전 뒷면 시 자신에게 [혼란]", "value": 80, "targetType": "enemy", "motion": "kick_spin" }
       ]
     },
     {
@@ -192,7 +192,7 @@
       "image": "manhera.png",
       "trait": { "id": "self_study", "name": "아침 시간에 자습하자니까~~", "desc": "공격 시 입힌 피해의 30%를 회복" },
       "skills": [
-        { "id": "s1", "name": "친한척 하기", "desc": "50 데미지, 대상의 다음 주는 피해 -50%", "value": 50, "targetType": "enemy", "motion": "curse" }
+        { "id": "s1", "name": "친한척 하기", "desc": "50 데미지, 대상의 다음 주는 피해 -50%", "value": 50, "targetType": "enemy", "motion": "menhera_hug" }
       ]
     },
     {
@@ -203,8 +203,8 @@
       "image": "sun.png",
       "trait": { "id": "hydrogen_fusion", "name": "수소 핵융합", "desc": "매턴 시작 시 자신의 HP 50 회복 및 최대 체력 +10" },
       "skills": [
-        { "id": "s1", "name": "이 따스한 빛이 느껴지나?", "desc": "아군 필드에 [쾌청] 설치", "targetType": "none", "motion": "heal" },
-        { "id": "s2", "name": "따스한 빛", "desc": "아군 1장 선택해 100 회복 및 [보호막] 50 부여", "targetType": "ally", "motion": "heal" }
+        { "id": "s1", "name": "이 따스한 빛이 느껴지나?", "desc": "아군 필드에 [쾌청] 설치", "targetType": "none", "motion": "sunny_sunshine" },
+        { "id": "s2", "name": "따스한 빛", "desc": "아군 1장 선택해 100 회복 및 [보호막] 50 부여", "targetType": "ally", "motion": "solar_heal_shield" }
       ]
     },
     {
@@ -215,8 +215,8 @@
       "image": "he.png",
       "trait": { "id": "joy", "name": "기쁨", "desc": "매턴 자신의 HP 80 회복" },
       "skills": [
-        { "id": "s1", "name": "매우 기쁘구나", "desc": "아군 1장 선택해 80 회복", "targetType": "ally", "motion": "heal" },
-        { "id": "s2", "name": "하하하하핳", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "tackle" }
+        { "id": "s1", "name": "매우 기쁘구나", "desc": "아군 1장 선택해 80 회복", "targetType": "ally", "motion": "joy_heal" },
+        { "id": "s2", "name": "하하하하핳", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "joy_strike" }
       ]
     },
     {
@@ -227,8 +227,8 @@
       "image": "ro.png",
       "trait": { "id": "anger", "name": "분노", "desc": "매턴 자신에게 [피해량 증가] 2스택 부여" },
       "skills": [
-        { "id": "s1", "name": "매우 화나는구나", "desc": "아군 1장 선택해 [피해량 증가] 3스택 부여", "targetType": "ally", "motion": "fire" },
-        { "id": "s2", "name": "하....ㅆ..", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "slash" }
+        { "id": "s1", "name": "매우 화나는구나", "desc": "아군 1장 선택해 [피해량 증가] 3스택 부여", "targetType": "ally", "motion": "anger_buff" },
+        { "id": "s2", "name": "하....ㅆ..", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "anger_strike" }
       ]
     },
     {
@@ -239,8 +239,8 @@
       "image": "ea.png",
       "trait": { "id": "sorrow", "name": "슬픔", "desc": "매턴 자신에게 [받는 피해량 감소] 2스택 부여" },
       "skills": [
-        { "id": "s1", "name": "매우 슬프구나", "desc": "아군 1장 선택해 [받는 피해량 감소] 3스택 부여", "targetType": "ally", "motion": "curse" },
-        { "id": "s2", "name": "ㅠㅠㅠㅠ", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "water" }
+        { "id": "s1", "name": "매우 슬프구나", "desc": "아군 1장 선택해 [받는 피해량 감소] 3스택 부여", "targetType": "ally", "motion": "sorrow_buff" },
+        { "id": "s2", "name": "ㅠㅠㅠㅠ", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "sorrow_strike" }
       ]
     },
     {
@@ -251,8 +251,8 @@
       "image": "rak.png",
       "trait": { "id": "pleasure", "name": "즐거움", "desc": "매턴 자신에게 [보호막] 60 부여" },
       "skills": [
-        { "id": "s1", "name": "매우 즐겁구나", "desc": "아군 1장 선택해 [보호막] 60 부여", "targetType": "ally", "motion": "heal" },
-        { "id": "s2", "name": "ㅋㅋㅋㅋㅋㅋ", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "tackle" }
+        { "id": "s1", "name": "매우 즐겁구나", "desc": "아군 1장 선택해 [보호막] 60 부여", "targetType": "ally", "motion": "pleasure_buff" },
+        { "id": "s2", "name": "ㅋㅋㅋㅋㅋㅋ", "desc": "60 데미지", "value": 60, "targetType": "enemy", "motion": "pleasure_strike" }
       ]
     },
     {
@@ -264,8 +264,8 @@
       "hidden": true,
       "trait": { "id": "huiroaerak_aura", "name": "喜怒哀樂", "desc": "매턴 시작 시 HP 80 회복, [피해증가] 2스택, [피해감소] 2스택, [보호막] 60 획득" },
       "skills": [
-        { "id": "s1", "name": "우습구나", "desc": "상대 필드 전체 60 데미지", "value": 60, "targetType": "none", "motion": "lightning" },
-        { "id": "s2", "name": "나락(奈落)으로 꺼져라", "desc": "200 데미지", "value": 200, "targetType": "enemy", "motion": "earthquake" }
+        { "id": "s1", "name": "우습구나", "desc": "상대 필드 전체 60 데미지", "value": 60, "targetType": "none", "motion": "huiroaerak_aoe" },
+        { "id": "s2", "name": "나락(奈落)으로 꺼져라", "desc": "200 데미지", "value": 200, "targetType": "enemy", "motion": "narak_blast" }
       ]
     }
   ],
