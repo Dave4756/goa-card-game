@@ -200,7 +200,7 @@
       "name": "태양 종현",
       "type": "mob",
       "hp": 200,
-      "image": "sunflower.png",
+      "image": "sun.png",
       "trait": { "id": "hydrogen_fusion", "name": "수소 핵융합", "desc": "매턴 시작 시 자신의 HP 50 회복 및 최대 체력 +10" },
       "skills": [
         { "id": "s1", "name": "이 따스한 빛이 느껴지나?", "desc": "아군 필드에 [쾌청] 설치", "targetType": "none", "motion": "heal" },
