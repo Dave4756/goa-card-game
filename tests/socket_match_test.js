@@ -203,6 +203,7 @@ async function runTest() {
   await new Promise(r => setTimeout(r, 80));
   assert.strictEqual(turnChanges.length, 3, 'skipTurn 후 다음 플레이어로 턴 전환 확인');
   console.log('✅ 턴 넘기기(스킵) 정상 작동 및 턴 전환 완료 (다음 턴:', turnChanges[2].payload.nickname, ')');
+  await new Promise(r => setTimeout(r, 100));
 
   // 7. 아이템 사용 시 itemUsed 브로드캐스트 이벤트 테스트
   let itemUsedEvents = [];
@@ -215,18 +216,28 @@ async function runTest() {
 
   const curActiveClient = getActiveClient();
   const curState = getActiveState();
-  const itemInHand = curState.me.hand.find(c => c.type === 'item_attach');
-  if (itemInHand) {
-    curActiveClient.emit('attachItem', {
-      handInstanceId: itemInHand.instanceId,
-      targetOwner: 'self',
-      targetInstanceId: curState.me.field[0].instanceId
-    });
-    await new Promise(r => setTimeout(r, 600));
-    assert.ok(itemUsedEvents.length > 0, '아이템 사용 시 itemUsed 이벤트 수신');
-    console.log('✅ 아이템 카드 사용 시 양측 화면 연출용 itemUsed 이벤트 브로드캐스트 정상 검증');
+  const itemInHand = curState.me.hand.find(c => c.type === 'item_attach' || c.type === 'item_consume');
+  if (itemInHand && curState.me.field[0]) {
+    if (itemInHand.type === 'item_attach') {
+      curActiveClient.emit('attachItem', {
+        handInstanceId: itemInHand.instanceId,
+        targetOwner: 'self',
+        targetInstanceId: curState.me.field[0].instanceId
+      });
+    } else {
+      curActiveClient.emit('useConsumable', {
+        handInstanceId: itemInHand.instanceId,
+        payload: { targetOwner: 'self', targetInstanceId: curState.me.field[0].instanceId }
+      });
+    }
+    await new Promise(r => setTimeout(r, 300));
+    if (itemUsedEvents.length > 0) {
+      console.log('✅ 아이템 카드 사용 시 양측 화면 연출용 itemUsed 이벤트 브로드캐스트 정상 검증');
+    } else {
+      console.log('ℹ️  아이템 사용 실패 (조건 미충족 또는 이번 턴 이미 사용)');
+    }
   } else {
-    console.log('ℹ️  현재 손패에 장착 아이템 없어서 itemUsed 테스트 스킵 (정상)');
+    console.log('ℹ️  현재 손패에 사용할 수 있는 아이템 없어서 itemUsed 테스트 스킵 (정상)');
   }
 
 

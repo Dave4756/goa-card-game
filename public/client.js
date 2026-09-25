@@ -771,29 +771,40 @@ function showItemUsePopup(payload) {
   const { userNickname, itemDefId, itemName, itemDesc, itemImage, itemType, targetName } = payload;
   
   // 사운드 재생
-  playItemUseSound(itemType);
+  try { playItemUseSound(itemType); } catch (e) { playSkillSound('heal'); }
+
+  // 기존 팝업이 있다면 즉시 제거하여 중복 방지
+  const oldPopups = document.querySelectorAll('.item-use-popup-overlay');
+  oldPopups.forEach(p => p.remove());
 
   const popup = document.createElement('div');
   popup.className = 'item-use-popup-overlay';
 
-  const cardDef = allCardsMap[itemDefId] || {};
-  const descText = itemDesc || cardDef.desc || '아이템 발동!';
+  const cardDef = (typeof allCardsMap !== 'undefined' && allCardsMap[itemDefId]) ? allCardsMap[itemDefId] : {};
+  const descText = itemDesc || cardDef.desc || '아이템 효과 발동!';
   const targetText = targetName ? ` ➔ [ ${targetName} ]` : '';
+
+  const imgSrc = itemImage
+    ? (itemImage.startsWith('/') ? itemImage : `/image/${itemImage}`)
+    : (cardDef.image ? (cardDef.image.startsWith('/') ? cardDef.image : `/image/${cardDef.image}`) : '/image/dummy.png');
 
   popup.innerHTML = `
     <div class="item-use-popup-box">
-      <div class="item-use-user">🎁 ${userNickname} 님이 아이템 사용!</div>
+      <div class="item-use-user">🎁 [${userNickname || '플레이어'}] 님이 아이템 사용!</div>
       <div class="item-use-main">
-        <img src="/${itemImage || cardDef.image || 'backpack.jpeg'}" class="item-use-img" onerror="this.src='/backpack.jpeg'" />
+        <img src="${imgSrc}" class="item-use-img" onerror="this.src='/image/dummy.png'" />
         <div class="item-use-info">
-          <div class="item-use-title">[ ${itemName} ]${targetText}</div>
+          <div class="item-use-title">[ ${itemName || '아이템'} ]${targetText}</div>
           <div class="item-use-desc">✨ ${descText}</div>
         </div>
       </div>
+      ${targetName ? `<div class="item-use-target">🎯 적용 대상: [ ${targetName} ]</div>` : ''}
     </div>
   `;
   document.body.appendChild(popup);
-  setTimeout(() => popup.remove(), 2200);
+  setTimeout(() => {
+    if (popup && popup.parentNode) popup.remove();
+  }, 2200);
 
   // 💡 [4조 C 나와~] 특수 회수 연출
   if (itemDefId === 'item_4jo') {
@@ -1774,42 +1785,7 @@ function renderHand(state) {
   });
 }
 
-// ===== 아이템 사용 연출 팝업 오버레이 =====
-let itemUseTimeout = null;
-function showItemUsePopup(payload) {
-  const { userNickname, itemName, itemImage, itemDesc, targetName } = payload;
-  const overlay = document.getElementById('itemUseOverlay');
-  const userEl = document.getElementById('itemUseUser');
-  const imgEl = document.getElementById('itemUseImg');
-  const nameEl = document.getElementById('itemUseName');
-  const effectEl = document.getElementById('itemUseEffect');
-  const targetEl = document.getElementById('itemUseTarget');
 
-  if (!overlay || !userEl || !imgEl || !nameEl) return;
-
-  userEl.textContent = `⚡ [${userNickname || '플레이어'}]님이 아이템을 사용했습니다!`;
-  imgEl.src = itemImage ? `/image/${itemImage}` : '/image/dummy.png';
-  nameEl.textContent = itemName || '아이템';
-  effectEl.textContent = itemDesc || '아이템 효과가 발동되었습니다.';
-
-  if (targetName) {
-    targetEl.style.display = 'block';
-    targetEl.textContent = `🎯 적용 대상: [${targetName}]`;
-  } else {
-    targetEl.style.display = 'none';
-  }
-
-  playSkillSound('heal'); // 청량한 아이템 발동 사운드
-
-  overlay.classList.remove('active');
-  void overlay.offsetWidth;
-  overlay.classList.add('active');
-
-  if (itemUseTimeout) clearTimeout(itemUseTimeout);
-  itemUseTimeout = setTimeout(() => {
-    overlay.classList.remove('active');
-  }, 2200);
-}
 
 // ===== 카드 드로우 효과음 =====
 function playDrawCardSound() {

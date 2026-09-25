@@ -1617,12 +1617,16 @@
   /* ====== 아이템 사용 및 효과 텍스트 팝업 오버레이 ====== */
   .item-use-popup-overlay {
     position: fixed !important;
-    top: 24%;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 22%;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
     z-index: 300;
     pointer-events: none;
-    animation: itemUsePopupAnim 2.2s cubic-bezier(0.15, 0.85, 0.35, 1.2) forwards;
+    box-sizing: border-box;
   }
   .item-use-popup-box {
     background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96));
@@ -1633,8 +1637,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 320px;
-    max-width: 480px;
+    min-width: 280px;
+    max-width: min(500px, 90vw);
+    width: max-content;
+    margin: 0 auto;
+    box-sizing: border-box;
+    animation: itemUsePopupAnim 2.2s cubic-bezier(0.15, 0.85, 0.35, 1.2) forwards;
   }
   .item-use-user {
     font-size: 14px;
@@ -1677,11 +1685,17 @@
     margin-top: 4px;
     line-height: 1.35;
   }
+  .item-use-target {
+    font-size: 13px;
+    color: #fbbf24;
+    margin-top: 8px;
+    font-weight: 700;
+  }
   @keyframes itemUsePopupAnim {
-    0% { opacity: 0; transform: translate(-50%, -30px) scale(0.6); }
-    18% { opacity: 1; transform: translate(-50%, 0) scale(1.05); }
-    75% { opacity: 1; transform: translate(-50%, 0) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -20px) scale(0.8); }
+    0% { opacity: 0; transform: translateY(-30px) scale(0.6); }
+    18% { opacity: 1; transform: translateY(0) scale(1.05); }
+    75% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-20px) scale(0.8); }
   }
 
   /* ====== 스킬 시전 시 스킬 이름 타이틀 텍스트 오버레이 ====== */
@@ -2432,20 +2446,7 @@
     </div>
   </div>
 
-  <!-- ===== 아이템 사용 연출 팝업 오버레이 ===== -->
-  <div id="itemUseOverlay" class="item-use-popup-overlay">
-    <div class="item-use-popup-box">
-      <div id="itemUseUser" class="item-use-user">플레이어가 아이템을 사용했습니다!</div>
-      <div class="item-use-main">
-        <img id="itemUseImg" class="item-use-img" src="" alt="아이템" />
-        <div class="item-use-info">
-          <div id="itemUseName" class="item-use-title">아이템 이름</div>
-          <div id="itemUseEffect" class="item-use-desc">아이템 효과 설명</div>
-        </div>
-      </div>
-      <div id="itemUseTarget" class="item-use-target">🎯 적용 대상: 골칫거리</div>
-    </div>
-  </div>
+
 
   <!-- ===== 2. 인게임 화면 ===== -->
   <div id="gameView">
