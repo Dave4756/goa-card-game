@@ -1274,49 +1274,53 @@ function renderStatusBadges(card) {
   if (statuses.sleep) {
     html += `<span class="status-badge-item badge-sleep" data-tooltip="이번 턴 수면 상태로 행동 불가 (턴 시작 시 동전 앞면 시 기상)" title="이번 턴 수면 상태로 행동 불가">💤 [수면]</span>`;
   }
-  if (statuses.fixedTarget) {
+  if (statuses.fixedTarget || statuses.fixed_target) {
     html += `<span class="status-badge-item badge-fixed" data-tooltip="상대의 다음 공격 대상으로 강제 고정" title="상대의 다음 공격 대상으로 강제 고정">🎯 [도발: 고정]</span>`;
   }
-  if (statuses.halveNextDamageTaken) {
+  if (statuses.halveNextDamageTaken || statuses.halve_next_damage_taken) {
     html += `<span class="status-badge-item badge-hyperfocus" data-tooltip="다음 받는 피해 50% 감소" title="다음 받는 피해 50% 감소">🛡️ [받는피해 반감]</span>`;
   }
-  if (statuses.halveNextDamageDealt) {
+  if (statuses.halveNextDamageDealt || statuses.halve_next_damage_dealt) {
     html += `<span class="status-badge-item badge-weakness" data-tooltip="다음 주는 피해 50% 감소" title="다음 주는 피해 50% 감소">⚠️ [공격력 반감]</span>`;
   }
   if (statuses.talmo) {
     html += `<span class="status-badge-item badge-talmo" data-tooltip="치명상 시 HP 1로 생존하고 특수 스킬 [임종](적 전체 400 피해) 발동 후 사망" title="치명상 시 [임종] 발동 후 사망">🦲 [탈모]</span>`;
   }
-  if (statuses.trustedComrade) {
-    html += `<span class="status-badge-item badge-trusted_comrade" data-tooltip="필드 몹 수와 관계없이 기사도 정신(주는 피해 2배, 받는 피해 절반) 상시 발동" title="기사도 정신 상시 발동">🤝 [믿을 만한 동료]</span>`;
+  if (statuses.trusted_comrade || statuses.trustedComrade) {
+    html += `<span class="status-badge-item badge-trusted_comrade" data-tooltip="[궁수 전장연 버프] 필드 몹 수와 관계없이 기사도 정신(주는 피해 2배, 받는 피해 절반) 상시 발동" title="기사도 정신 상시 발동">🤝 [믿을 만한 동료]</span>`;
   }
-  if (statuses.chosenHero) {
-    html += `<span class="status-badge-item badge-chosen_hero" data-tooltip="최대 HP 523으로 상향 조정 및 주는 피해 +30" title="최대 HP 523 & 공격력 +30">✨ [선택 받은 용사]</span>`;
+  if (statuses.chosen_hero || statuses.chosenHero) {
+    html += `<span class="status-badge-item badge-chosen_hero" data-tooltip="[성직자 전장연 버프] 최대 HP 523으로 상향 조정 및 주는 피해 +30" title="최대 HP 523 & 공격력 +30">✨ [선택 받은 용사]</span>`;
   }
-  if (statuses.isekaiHero) {
-    html += `<span class="status-badge-item badge-isekai_hero" data-tooltip="용사 파티원과 결속되어 동료들이 모두 쓰러지면 타락한 용사로 진화" title="타락한 용사 진화 자격">🧙‍♂️ [이세계 용사]</span>`;
+  if (statuses.isekai_hero || statuses.isekaiHero) {
+    html += `<span class="status-badge-item badge-isekai_hero" data-tooltip="[마법사 전장연 버프] 용사 파티원과 결속되어 동료들이 모두 쓰러지면 타락한 용사로 진화" title="타락한 용사 진화 자격">🧙‍♂️ [이세계 용사]</span>`;
   }
-  if (statuses.nextDmgBoost50) {
-    html += `<span class="status-badge-item badge-next_dmg_boost_50" data-tooltip="다음 주는 피해 +50%" title="다음 주는 피해 +50%">🏹 [활시위 당기기]</span>`;
+  if (statuses.next_dmg_boost_50 || statuses.nextDmgBoost50) {
+    html += `<span class="status-badge-item badge-next_dmg_boost_50" data-tooltip="[궁수 전장연 버프] 다음 주는 피해 +50%" title="다음 주는 피해 +50%">🏹 [활시위 당기기]</span>`;
   }
 
   // 2. 스택형 키워드
   if (stacks.overcharge && stacks.overcharge > 0) {
     html += `<span class="status-badge-item badge-overcharge" data-tooltip="과충전 스택 (스택당 방전 데미지 증가, 피격 피해 +10)" title="과충전 스택">⚡ [과충전 x${stacks.overcharge}]</span>`;
   }
-  if (stacks.hotFuel && stacks.hotFuel > 0) {
-    html += `<span class="status-badge-item badge-hotfuel" data-tooltip="과열된 연료 스택 (공격 시 상대에게 화상 부여)" title="과열된 연료 스택">🏎️ [과열연료 x${stacks.hotFuel}]</span>`;
+  if ((stacks.hotFuel || stacks.hot_fuel) && (stacks.hotFuel || stacks.hot_fuel) > 0) {
+    const v = stacks.hotFuel || stacks.hot_fuel;
+    html += `<span class="status-badge-item badge-hotfuel" data-tooltip="과열된 연료 스택 (공격 시 상대에게 화상 부여)" title="과열된 연료 스택">🏎️ [과열연료 x${v}]</span>`;
   }
   if (stacks.shield && stacks.shield > 0) {
     html += `<span class="status-badge-item badge-shield" data-tooltip="보호막 수치만큼 피격 피해를 우선 감면" title="보호막 수치만큼 피격 피해를 우선 감면">🛡️ [보호막 ${stacks.shield}]</span>`;
   }
-  if (stacks.dmgUp && stacks.dmgUp > 0) {
-    html += `<span class="status-badge-item badge-dmgup" data-tooltip="1스택당 주는 피해 +10% (공격 후 소실)" title="1스택당 주는 피해 +10% (공격 후 소실)">⚔️ [피해증가 x${stacks.dmgUp}]</span>`;
+  if ((stacks.dmgUp || stacks.dmg_up) && (stacks.dmgUp || stacks.dmg_up) > 0) {
+    const v = stacks.dmgUp || stacks.dmg_up;
+    html += `<span class="status-badge-item badge-dmgup" data-tooltip="1스택당 주는 피해 +10% (공격 후 소실)" title="1스택당 주는 피해 +10% (공격 후 소실)">⚔️ [피해증가 x${v}]</span>`;
   }
-  if (stacks.dmgDown && stacks.dmgDown > 0) {
-    html += `<span class="status-badge-item badge-dmgdown" data-tooltip="1스택당 받는 피해 -10% (피격 후 소실)" title="1스택당 받는 피해 -10% (피격 후 소실)">🛡️ [피해감소 x${stacks.dmgDown}]</span>`;
+  if ((stacks.dmgDown || stacks.dmg_down) && (stacks.dmgDown || stacks.dmg_down) > 0) {
+    const v = stacks.dmgDown || stacks.dmg_down;
+    html += `<span class="status-badge-item badge-dmgdown" data-tooltip="1스택당 받는 피해 -10% (피격 후 소실)" title="1스택당 받는 피해 -10% (피격 후 소실)">🛡️ [피해감소 x${v}]</span>`;
   }
-  if (stacks.lastEmber && stacks.lastEmber > 0) {
-    html += `<span class="status-badge-item badge-last_ember" data-tooltip="치명상을 입어도 HP 1로 버티고, 다음 턴 [마지막 발악](광역 100 피해) 시전" title="치명상 1회 버팀 & 마지막 발악">🔥 [마지막 불씨 x${stacks.lastEmber}]</span>`;
+  if ((stacks.last_ember || stacks.lastEmber) && (stacks.last_ember || stacks.lastEmber) > 0) {
+    const v = stacks.last_ember || stacks.lastEmber;
+    html += `<span class="status-badge-item badge-last_ember" data-tooltip="치명상을 입어도 HP 1로 버티고, 다음 턴 [마지막 발악](광역 100 피해) 시전" title="치명상 1회 버팀 & 마지막 발악">🔥 [마지막 불씨 x${v}]</span>`;
   }
 
   if (!html) return '';
@@ -1569,6 +1573,13 @@ function cardEl(card, isEnemy) {
     if (card.statuses.confusion) statusClasses += ' status-confusion';
     if (card.statuses.burn) statusClasses += ' status-burn';
     if (card.statuses.sleep) statusClasses += ' status-sleep';
+    if (card.statuses.talmo) statusClasses += ' status-talmo';
+    if (card.statuses.chosen_hero || card.statuses.chosenHero) statusClasses += ' status-chosen-hero';
+    if (card.statuses.isekai_hero || card.statuses.isekaiHero) statusClasses += ' status-isekai-hero';
+    if (card.statuses.trusted_comrade || card.statuses.trustedComrade) statusClasses += ' status-trusted-comrade';
+  }
+  if (card && card.stacks) {
+    if ((card.stacks.last_ember || card.stacks.lastEmber) > 0) statusClasses += ' status-last-ember';
   }
 
   div.className = 'card' + (isEnemy ? ' enemy' : '') + (isDead ? ' dead' : '') + statusClasses;
