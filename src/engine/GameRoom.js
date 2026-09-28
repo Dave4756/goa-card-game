@@ -316,11 +316,14 @@ class GameRoom {
       this._applyHp(targetPlayer, targetCard, dealtToTarget);
     }
 
-    // 생명흡수 트레잇 (연기력 50% 버프 / 내겐 고통 밖에 없습니다 50% / 아침 시간에 자습하자니까 30%)
+    // 생명흡수 트레잇 (연기력 50% 버프 / 내겐 고통 밖에 없습니다 5% / 아침 시간에 자습하자니까 30%)
     if (sourceCard && sourceCard.def.trait) {
       const tid = sourceCard.def.trait.id;
-      if (tid === 'acting' || tid === 'only_pain') {
+      if (tid === 'acting') {
         const healAmount = Math.floor(amount * 0.5);
+        if (healAmount > 0) this.heal(sourceCard, healAmount);
+      } else if (tid === 'only_pain') {
+        const healAmount = Math.floor(amount * 0.05);
         if (healAmount > 0) this.heal(sourceCard, healAmount);
       } else if (tid === 'self_study') {
         const healAmount = Math.floor(amount * 0.3);

@@ -324,12 +324,12 @@
       "hp": 523,
       "image": "dark_knight.png",
       "hidden": true,
-      "trait": { "id": "only_pain", "name": "내겐 고통 밖에 없습니다", "desc": "[기사 전장연]의 패시브 효과를 그대로 획득함, 자신이 주는 피해의 50%를 회복함, [마지막 불씨] 1스택 획득" },
+      "trait": { "id": "only_pain", "name": "내겐 고통 밖에 없습니다", "desc": "[기사 전장연]의 패시브 효과를 그대로 획득함, 자신이 주는 피해의 5%를 회복함, [마지막 불씨] 1스택 획득" },
       "skills": [
-        { "id": "s1", "name": "너가 죽였냐", "desc": "200 데미지", "value": 100, "targetType": "enemy", "motion": "corrupted_vertical_slash" },
-        { "id": "s2", "name": "다 사라졌으면", "desc": "상대 필드 전체 50 데미지", "value": 25, "targetType": "none", "motion": "corrupted_horizontal_slash" }
+        { "id": "s1", "name": "너가 죽였냐", "desc": "80 데미지", "value": 80, "targetType": "enemy", "motion": "corrupted_vertical_slash" },
+        { "id": "s2", "name": "다 사라졌으면", "desc": "상대 필드 전체 20 데미지", "value": 20, "targetType": "none", "motion": "corrupted_horizontal_slash" }
       ],
-      "specialSkill": { "id": "last_struggle", "name": "마지막 발악", "desc": "광역 100 데미지 (직접 사용 불가)", "value": 60, "motion": "last_struggle_slash" }
+      "specialSkill": { "id": "last_struggle", "name": "마지막 발악", "desc": "광역 60 데미지 (직접 사용 불가)", "value": 60, "motion": "last_struggle_slash" }
     }
   ],
   "items": [
@@ -340,8 +340,8 @@
     { "id": "item_chaekgabang", "name": "책가방", "type": "item_consume", "image": "backpack.jpeg", "desc": "덱에서 랜덤 2장 드로우" },
     { "id": "item_ai_geumji", "name": "생성형 ai 사용 금지!", "type": "item_consume", "image": "nochatgpt.png", "desc": "상대 몹 카드 1장의 부착 아이템을 트레쉬로 이동" },
     { "id": "item_ya_i_sibal", "name": "야 이 시발", "type": "item_consume", "image": "siba.png", "desc": "자신의 몹 카드 1장의 모든 디버프(해로운 상태이상) 해제" },
-    { "id": "item_pos_neg", "name": "positive negative", "type": "item_consume", "image": "potion.jpeg", "desc": "대상 1장에 동전 던지기: 앞면 hp 200 회복, 뒷면 200 피해" },
-    { "id": "item_geupsik", "name": "급식", "type": "item_consume", "image": "spoon.jpeg", "desc": "아군 몹 카드 1장의 HP를 100 회복" },
+    { "id": "item_pos_neg", "name": "positive negative", "type": "item_consume", "image": "pos_neg.png", "desc": "대상 1장에 동전 던지기: 앞면 hp 200 회복, 뒷면 200 피해" },
+    { "id": "item_geupsik", "name": "급식", "type": "item_consume", "image": "school_lunch.jpeg", "desc": "아군 몹 카드 1장의 HP를 100 회복" },
     { "id": "item_hug", "name": "포옹", "type": "item_consume", "image": "sum.png", "desc": "자신의 트레쉬에서 랜덤한 몹 카드를 손패로 되돌림" },
     { "id": "item_4jo", "name": "4조 c 나와~", "type": "item_consume", "image": "pickup.png", "desc": "자신의 필드 몹 카드 1장을 패로 되돌림" },
     { "id": "item_chilpan", "name": "이 칠판 지우개를 봐", "type": "item_consume", "image": "eraser.png", "desc": "자신의 몹 카드 1장을 상대의 다음 공격 대상으로 고정" },
