@@ -52,9 +52,23 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('currentNicknameDisplay').textContent = currentNickname;
   loadInitialDeckFromStorage();
   loadDeckData();
+  // 대규모 업데이트 패치 노트 모달 자동 노출
+  if (!sessionStorage.getItem('goa_patch_notes_shown')) {
+    openPatchNotesModal();
+    sessionStorage.setItem('goa_patch_notes_shown', 'true');
+  }
 });
 
 function getNickname() { return currentNickname || '플레이어'; }
+
+function openPatchNotesModal() {
+  const modal = document.getElementById('patchNotesModal');
+  if (modal) modal.classList.add('active');
+}
+function closePatchNotesModal() {
+  const modal = document.getElementById('patchNotesModal');
+  if (modal) modal.classList.remove('active');
+}
 
 function openNicknameModal() {
   document.getElementById('nicknameModal').classList.add('active');
@@ -515,6 +529,9 @@ function _processEvent(e) {
     } else if (e.payload.kind === 'huiroaerak_awaken') {
       showHuiRoAeRakSummon(e.payload.name);
       return 3300; // 희로애락 한자 합체 소환 연출 3.3초 대기
+    } else if (e.payload.kind === 'corrupted_hero_summon') {
+      showCorruptedHeroSummon(e.payload.name, e.payload.videoUrl);
+      return 5500; // 타락한 이세계 용사 소환 영상 연출 대기
     }
     showSpecialEffect(e.payload.name, e.payload.kind);
     return 2500;
@@ -749,6 +766,42 @@ function showHuiRoAeRakSummon(name) {
   } catch(e) {}
 }
 
+// ===== 타락한 이세계 용사 전장연 강림 영상 연출 =====
+function showCorruptedHeroSummon(name, videoUrl) {
+  const overlay = document.getElementById('corruptedHeroVideoOverlay');
+  const video = document.getElementById('corruptedHeroVideo');
+  if (!overlay || !video) {
+    showSpecialEffect(name, 'corrupted_hero');
+    return;
+  }
+  if (videoUrl) video.src = videoUrl;
+  overlay.style.display = 'flex';
+  video.currentTime = 0;
+  video.play().catch(() => {});
+
+  // 화면 전체 강한 진동
+  document.body.classList.add('screen-shake');
+  setTimeout(() => document.body.classList.remove('screen-shake'), 800);
+
+  video.onended = () => {
+    closeCorruptedHeroVideo();
+  };
+}
+
+function skipCorruptedHeroVideo() {
+  closeCorruptedHeroVideo();
+}
+
+function closeCorruptedHeroVideo() {
+  const overlay = document.getElementById('corruptedHeroVideoOverlay');
+  const video = document.getElementById('corruptedHeroVideo');
+  if (video) {
+    video.pause();
+    video.currentTime = 0;
+  }
+  if (overlay) overlay.style.display = 'none';
+}
+
 // ===== 필드 키워드 활성화 VFX =====
 function triggerFieldKeywordVfx(keyword, ownerNickname) {
   if (keyword === 'electricField' || keyword === 'electric_field') {
@@ -875,7 +928,11 @@ function triggerSkillVfx(payload) {
   playSkillSound(effectType);
 
   // 3. 강한 스킬 화면 진동 (0.7초)
-  const HEAVY_MOTIONS = new Set(['solar_beam', 'beam', 'narak_blast', 'bugwang_smash', 'tsunami_wave', 'million_volts', 'bald_disaster', 'disaster_doom', 'huiroaerak_aoe']);
+  const HEAVY_MOTIONS = new Set([
+    'solar_beam', 'beam', 'narak_blast', 'bugwang_smash', 'tsunami_wave',
+    'million_volts', 'bald_disaster', 'disaster_doom', 'huiroaerak_aoe',
+    'imjong_blast', 'corrupted_vertical_slash', 'corrupted_horizontal_slash', 'last_struggle_slash'
+  ]);
   if (HEAVY_MOTIONS.has(effectType) || isAoE) {
     document.body.classList.add('screen-shake');
     setTimeout(() => document.body.classList.remove('screen-shake'), 750);
@@ -996,8 +1053,77 @@ function triggerSkillVfx(payload) {
     return;
   }
 
+  // 8-1. [임종] 광역 폭발 전체 연출
+  if (effectType === 'imjong_blast') {
+    const blast = document.createElement('div');
+    blast.className = 'vfx-imjong-blast';
+    document.body.appendChild(blast);
+    setTimeout(() => blast.remove(), 2200);
+
+    const targets = [...document.querySelectorAll(`${enemyFieldSel} .card:not(.dead)`)];
+    targets.forEach(t => {
+      t.classList.add('card-hit-recoil');
+      applyVfxToElement(t, 'imjong_blast');
+      setTimeout(() => t.classList.remove('card-hit-recoil'), 1200);
+    });
+    return;
+  }
+
+  // 8-2. 타락한 용사 수직 베기 (너가 죽였냐)
+  if (effectType === 'corrupted_vertical_slash') {
+    const slash = document.createElement('div');
+    slash.className = 'vfx-corrupted_vertical_slash';
+    document.body.appendChild(slash);
+    setTimeout(() => slash.remove(), 1400);
+
+    const targets = tgtEl ? [tgtEl] : [...document.querySelectorAll(`${enemyFieldSel} .card:not(.dead)`)];
+    targets.forEach(t => {
+      t.classList.add('card-hit-recoil');
+      applyVfxToElement(t, 'corrupted_vertical_slash');
+      setTimeout(() => t.classList.remove('card-hit-recoil'), 1200);
+    });
+    return;
+  }
+
+  // 8-3. 타락한 용사 수평 베기 (다 사라졌으면)
+  if (effectType === 'corrupted_horizontal_slash') {
+    const slash = document.createElement('div');
+    slash.className = 'vfx-corrupted_horizontal_slash';
+    document.body.appendChild(slash);
+    setTimeout(() => slash.remove(), 1400);
+
+    const targets = [...document.querySelectorAll(`${enemyFieldSel} .card:not(.dead)`)];
+    targets.forEach(t => {
+      t.classList.add('card-hit-recoil');
+      applyVfxToElement(t, 'corrupted_horizontal_slash');
+      setTimeout(() => t.classList.remove('card-hit-recoil'), 1200);
+    });
+    return;
+  }
+
+  // 8-4. 마지막 발악 광역 검기
+  if (effectType === 'last_struggle_slash') {
+    const struggle = document.createElement('div');
+    struggle.className = 'vfx-last_struggle_slash';
+    document.body.appendChild(struggle);
+    setTimeout(() => struggle.remove(), 1800);
+
+    const targets = [...document.querySelectorAll(`${enemyFieldSel} .card:not(.dead)`)];
+    targets.forEach(t => {
+      t.classList.add('card-hit-recoil');
+      applyVfxToElement(t, 'last_struggle_slash');
+      setTimeout(() => t.classList.remove('card-hit-recoil'), 1200);
+    });
+    return;
+  }
+
   // 9. 힐/버프 모션
-  const HEAL_MOTIONS = new Set(['heal', 'love_heal', 'solar_heal_shield', 'joy_heal', 'old_heal', 'battery_charge', 'photosynthesis_charge', 'sunny_sunshine', 'electric_field_cast', 'anger_buff', 'sorrow_buff', 'pleasure_buff', 'engine_rev']);
+  const HEAL_MOTIONS = new Set([
+    'heal', 'love_heal', 'solar_heal_shield', 'joy_heal', 'old_heal',
+    'battery_charge', 'photosynthesis_charge', 'sunny_sunshine',
+    'electric_field_cast', 'anger_buff', 'sorrow_buff', 'pleasure_buff',
+    'engine_rev', 'talmo_start', 'mage_buff', 'cleric_heal', 'bow_draw'
+  ]);
   if (HEAL_MOTIONS.has(effectType)) {
     [srcEl, tgtEl].forEach(el => {
       if (el) {
@@ -1009,7 +1135,7 @@ function triggerSkillVfx(payload) {
     return;
   }
 
-  // 10. 전양 필드 / 상대 필드 지정 타격 연출
+  // 10. 전체 필드 / 상대 필드 지정 타격 연출
   const targetEls = (effectType === 'disaster_doom')
     ? [...document.querySelectorAll('#myField .card:not(.dead), #oppField .card:not(.dead)')]
     : (isAoE ? [...document.querySelectorAll(`${enemyFieldSel} .card:not(.dead)`)] : (tgtEl ? [tgtEl] : (srcEl ? [srcEl] : [])));
@@ -1042,7 +1168,7 @@ function playSkillSound(effectType) {
     gain.connect(ctx.destination);
     const now = ctx.currentTime;
 
-    if (effectType === 'narak_blast') {
+    if (effectType === 'narak_blast' || effectType === 'imjong_blast' || effectType === 'last_struggle_slash') {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(140, now);
       osc.frequency.exponentialRampToValueAtTime(30, now + 0.7);
@@ -1050,6 +1176,14 @@ function playSkillSound(effectType) {
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
       osc.start(now);
       osc.stop(now + 0.7);
+    } else if (effectType.includes('slash') || effectType.includes('strike')) {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.35);
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      osc.start(now);
+      osc.stop(now + 0.35);
     } else if (effectType === 'bugwang_smash') {
       osc.type = 'square';
       osc.frequency.setValueAtTime(440, now);
@@ -1085,7 +1219,7 @@ function playSkillSound(effectType) {
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
       osc.start(now);
       osc.stop(now + 0.35);
-    } else if (effectType.includes('heal') || effectType.includes('sunshine') || effectType.includes('charge')) {
+    } else if (effectType.includes('heal') || effectType.includes('sunshine') || effectType.includes('charge') || effectType.includes('holy')) {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(523.25, now);
       osc.frequency.setValueAtTime(659.25, now + 0.1);
@@ -1130,41 +1264,59 @@ function renderStatusBadges(card) {
   const statuses = card.statuses || {};
   const stacks = card.stacks || {};
 
-  // 1. 상태이상 (디버프형)
+  // 1. 상태이상 (디버프형 & 특수형)
   if (statuses.confusion) {
-    html += `<span class="status-badge-item badge-confusion" title="공격 스킬 시전 시 동전을 던져 뒷면이면 20 자해 및 실패">🌀 [혼란]</span>`;
+    html += `<span class="status-badge-item badge-confusion" data-tooltip="공격 스킬 시전 시 동전을 던져 뒷면이면 20 자해 및 실패" title="공격 스킬 시전 시 동전을 던져 뒷면이면 20 자해 및 실패">🌀 [혼란]</span>`;
   }
   if (statuses.burn) {
-    html += `<span class="status-badge-item badge-burn" title="매 턴 시작 시 20 데미지 피해 (동전 앞면 시 해제)">🔥 [화상 -20]</span>`;
+    html += `<span class="status-badge-item badge-burn" data-tooltip="매 턴 시작 시 20 데미지 피해 (동전 앞면 시 해제)" title="매 턴 시작 시 20 데미지 피해 (동전 앞면 시 해제)">🔥 [화상 -20]</span>`;
   }
   if (statuses.sleep) {
-    html += `<span class="status-badge-item badge-sleep" title="이번 턴 수면 상태로 행동 불가">💤 [수면]</span>`;
+    html += `<span class="status-badge-item badge-sleep" data-tooltip="이번 턴 수면 상태로 행동 불가 (턴 시작 시 동전 앞면 시 기상)" title="이번 턴 수면 상태로 행동 불가">💤 [수면]</span>`;
   }
   if (statuses.fixedTarget) {
-    html += `<span class="status-badge-item badge-fixed" title="상대의 다음 공격 대상으로 강제 고정">🎯 [도발: 고정]</span>`;
+    html += `<span class="status-badge-item badge-fixed" data-tooltip="상대의 다음 공격 대상으로 강제 고정" title="상대의 다음 공격 대상으로 강제 고정">🎯 [도발: 고정]</span>`;
   }
   if (statuses.halveNextDamageTaken) {
-    html += `<span class="status-badge-item badge-hyperfocus" title="다음 받는 피해 50% 감소">🛡️ [받는피해 반감]</span>`;
+    html += `<span class="status-badge-item badge-hyperfocus" data-tooltip="다음 받는 피해 50% 감소" title="다음 받는 피해 50% 감소">🛡️ [받는피해 반감]</span>`;
   }
   if (statuses.halveNextDamageDealt) {
-    html += `<span class="status-badge-item badge-weakness" title="다음 주는 피해 50% 감소">⚠️ [공격력 반감]</span>`;
+    html += `<span class="status-badge-item badge-weakness" data-tooltip="다음 주는 피해 50% 감소" title="다음 주는 피해 50% 감소">⚠️ [공격력 반감]</span>`;
+  }
+  if (statuses.talmo) {
+    html += `<span class="status-badge-item badge-talmo" data-tooltip="치명상 시 HP 1로 생존하고 특수 스킬 [임종](적 전체 400 피해) 발동 후 사망" title="치명상 시 [임종] 발동 후 사망">🦲 [탈모]</span>`;
+  }
+  if (statuses.trustedComrade) {
+    html += `<span class="status-badge-item badge-trusted_comrade" data-tooltip="필드 몹 수와 관계없이 기사도 정신(주는 피해 2배, 받는 피해 절반) 상시 발동" title="기사도 정신 상시 발동">🤝 [믿을 만한 동료]</span>`;
+  }
+  if (statuses.chosenHero) {
+    html += `<span class="status-badge-item badge-chosen_hero" data-tooltip="최대 HP 523으로 상향 조정 및 주는 피해 +30" title="최대 HP 523 & 공격력 +30">✨ [선택 받은 용사]</span>`;
+  }
+  if (statuses.isekaiHero) {
+    html += `<span class="status-badge-item badge-isekai_hero" data-tooltip="용사 파티원과 결속되어 동료들이 모두 쓰러지면 타락한 용사로 진화" title="타락한 용사 진화 자격">🧙‍♂️ [이세계 용사]</span>`;
+  }
+  if (statuses.nextDmgBoost50) {
+    html += `<span class="status-badge-item badge-next_dmg_boost_50" data-tooltip="다음 주는 피해 +50%" title="다음 주는 피해 +50%">🏹 [활시위 당기기]</span>`;
   }
 
   // 2. 스택형 키워드
   if (stacks.overcharge && stacks.overcharge > 0) {
-    html += `<span class="status-badge-item badge-overcharge" title="과충전 스택">⚡ [과충전 x${stacks.overcharge}]</span>`;
+    html += `<span class="status-badge-item badge-overcharge" data-tooltip="과충전 스택 (스택당 방전 데미지 증가, 피격 피해 +10)" title="과충전 스택">⚡ [과충전 x${stacks.overcharge}]</span>`;
   }
   if (stacks.hotFuel && stacks.hotFuel > 0) {
-    html += `<span class="status-badge-item badge-hotfuel" title="과열된 연료 스택">🏎️ [과열연료 x${stacks.hotFuel}]</span>`;
+    html += `<span class="status-badge-item badge-hotfuel" data-tooltip="과열된 연료 스택 (공격 시 상대에게 화상 부여)" title="과열된 연료 스택">🏎️ [과열연료 x${stacks.hotFuel}]</span>`;
   }
   if (stacks.shield && stacks.shield > 0) {
-    html += `<span class="status-badge-item badge-shield" title="보호막 수치만큼 피격 피해를 우선 감면">🛡️ [보호막 ${stacks.shield}]</span>`;
+    html += `<span class="status-badge-item badge-shield" data-tooltip="보호막 수치만큼 피격 피해를 우선 감면" title="보호막 수치만큼 피격 피해를 우선 감면">🛡️ [보호막 ${stacks.shield}]</span>`;
   }
   if (stacks.dmgUp && stacks.dmgUp > 0) {
-    html += `<span class="status-badge-item badge-dmgup" title="1스택당 주는 피해 +10% (공격 후 소실)">⚔️ [피해증가 x${stacks.dmgUp}]</span>`;
+    html += `<span class="status-badge-item badge-dmgup" data-tooltip="1스택당 주는 피해 +10% (공격 후 소실)" title="1스택당 주는 피해 +10% (공격 후 소실)">⚔️ [피해증가 x${stacks.dmgUp}]</span>`;
   }
   if (stacks.dmgDown && stacks.dmgDown > 0) {
-    html += `<span class="status-badge-item badge-dmgdown" title="1스택당 받는 피해 -10% (피격 후 소실)">🛡️ [피해감소 x${stacks.dmgDown}]</span>`;
+    html += `<span class="status-badge-item badge-dmgdown" data-tooltip="1스택당 받는 피해 -10% (피격 후 소실)" title="1스택당 받는 피해 -10% (피격 후 소실)">🛡️ [피해감소 x${stacks.dmgDown}]</span>`;
+  }
+  if (stacks.lastEmber && stacks.lastEmber > 0) {
+    html += `<span class="status-badge-item badge-last_ember" data-tooltip="치명상을 입어도 HP 1로 버티고, 다음 턴 [마지막 발악](광역 100 피해) 시전" title="치명상 1회 버팀 & 마지막 발악">🔥 [마지막 불씨 x${stacks.lastEmber}]</span>`;
   }
 
   if (!html) return '';

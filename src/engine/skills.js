@@ -244,6 +244,62 @@ const skillHandlers = {
       room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 200 });
     },
   },
+
+  card_talmo: {
+    s1: ({ room, player, opponent, card, target }) => {
+      room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 30 });
+    },
+    s2: ({ room, card }) => {
+      card.addStatus(STATUS.TALMO, {});
+      room.pushEvent('log', { message: `🦲 ${card.name}에게 [탈모]가 시작되었습니다! (영구 지속)` });
+    },
+  },
+
+  card_mage: {
+    s1: ({ room, target }) => {
+      if (!target) return;
+      const mult = target.defId === 'card_gisa' ? 3 : 1;
+      target.addStack(STACK.DMG_UP, 1 * mult, MAX_DMG_STACK);
+      target.addStack(STACK.DMG_DOWN, 1 * mult, MAX_DMG_STACK);
+      room.pushEvent('stackGain', { instanceId: target.instanceId, stack: STACK.DMG_UP, value: target.getStack(STACK.DMG_UP) });
+      room.pushEvent('stackGain', { instanceId: target.instanceId, stack: STACK.DMG_DOWN, value: target.getStack(STACK.DMG_DOWN) });
+      room.pushEvent('log', { message: `🧙‍♂️ ${target.name}에게 [피해증가] ${mult}스택, [피해감소] ${mult}스택을 부여했습니다.` });
+    },
+    s2: ({ room, player, opponent, card, target }) => {
+      room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 60 });
+    },
+  },
+
+  card_cleric: {
+    s1: ({ room, target }) => {
+      if (!target) return;
+      const healAmt = target.defId === 'card_gisa' ? 180 : 60;
+      room.heal(target, healAmt);
+      room.pushEvent('log', { message: `✨ ${target.name}에게 [힐마법]으로 ${healAmt} HP를 회복시켰습니다.` });
+    },
+    s2: ({ room, player, opponent, card, target }) => {
+      room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 60 });
+    },
+  },
+
+  card_archer: {
+    s1: ({ room, card }) => {
+      card.addStatus(STATUS.NEXT_DMG_BOOST_50, {});
+      room.pushEvent('log', { message: `🏹 ${card.name}이(가) [활시위 당기기]로 다음 공격 피해가 +50% 증가합니다.` });
+    },
+    s2: ({ room, player, opponent, card, target }) => {
+      room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 80 });
+    },
+  },
+
+  card_corrupted_hero: {
+    s1: ({ room, player, opponent, card, target }) => {
+      room.dealDamage({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, targetCard: target, baseAmount: 200 });
+    },
+    s2: ({ room, player, opponent, card }) => {
+      room.dealDamageAll({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, baseAmount: 50 });
+    },
+  },
 };
 
 /** 소모형 아이템 효과. payload는 클라이언트가 보낸 대상 정보 { targetOwner, targetInstanceId, targetOwner2, targetInstanceId2 } 등 */
@@ -277,8 +333,24 @@ const consumables = {
     const target = owner.findOnField(payload?.targetInstanceId);
     if (!target) return { error: '대상을 지정해주세요.' };
     const heads = room.coinFlip('positive negative');
-    if (heads) room.heal(target, 100);
-    else room.dealDamage({ sourcePlayer: null, sourceCard: null, targetPlayer: owner, targetCard: target, baseAmount: 100 });
+    if (heads) room.heal(target, 200);
+    else room.dealDamage({ sourcePlayer: null, sourceCard: null, targetPlayer: owner, targetCard: target, baseAmount: 200 });
+  },
+  item_geupsik: ({ room, player, payload }) => {
+    const target = player.findOnField(payload?.targetInstanceId);
+    if (!target) return { error: '대상을 지정해주세요.' };
+    room.heal(target, 100);
+    room.pushEvent('log', { message: `🍱 ${player.nickname}이(가) [급식]으로 ${target.name}의 HP를 100 회복했습니다.` });
+  },
+  item_hug: ({ room, player }) => {
+    const mobIndices = player.trash
+      .map((c, i) => (c.type === 'mob' ? i : -1))
+      .filter((i) => i !== -1);
+    if (mobIndices.length === 0) return { error: '트레쉬에 몹 카드가 없습니다.' };
+    const randIdx = mobIndices[Math.floor(Math.random() * mobIndices.length)];
+    const [card] = player.trash.splice(randIdx, 1);
+    player.hand.push(card);
+    room.pushEvent('log', { message: `🫂 ${player.nickname}이(가) [포옹]으로 트레쉬에서 [${card.name}]을(를) 손패로 회수했습니다.` });
   },
   item_4jo: ({ room, player, payload }) => {
     const res = room.returnFieldCardToHand(player, payload?.targetInstanceId);

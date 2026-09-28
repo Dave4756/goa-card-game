@@ -93,14 +93,30 @@ function onTurnStart(room, player, opponent) {
       room.pushEvent('log', { message: `😆 ${card.name} 특성 [즐거움]: [보호막] 60 획득!` });
     }
 
-    // 트레잇: 喜怒哀樂 (희로애락)
+    // 트레잇: 喜怒哀樂 (희로애락) - 너프: 회복/보호막 절반
     if (card.def.trait && card.def.trait.id === 'huiroaerak_aura') {
-      room.heal(card, 80);
+      room.heal(card, 40);
       card.addStack(STACK.DMG_UP, 2, MAX_DMG_STACK);
       card.addStack(STACK.DMG_DOWN, 2, MAX_DMG_STACK);
-      card.addStack(STACK.SHIELD, 60);
+      card.addStack(STACK.SHIELD, 30);
       room.pushEvent('stackGain', { instanceId: card.instanceId, stack: STACK.SHIELD, value: card.getStack(STACK.SHIELD) });
-      room.pushEvent('log', { message: `✨ ${card.name} 특성 [喜怒哀樂]: HP 80 회복, 피해증가+2, 피해감소+2, 보호막+60!` });
+      room.pushEvent('log', { message: `✨ ${card.name} 특성 [喜怒哀樂]: HP 40 회복, 피해증가+2, 피해감소+2, 보호막+30!` });
+    }
+
+    // 타락한 용사 [마지막 불씨] -> 다음 턴 [마지막 발악] 광역 100 데미지 발동
+    if (card.flags.pendingLastStruggle) {
+      card.flags.pendingLastStruggle = false;
+      room.pushEvent('skillCast', {
+        sourceCardId: card.instanceId,
+        sourceCardName: card.name,
+        skillId: 'last_struggle',
+        skillName: '마지막 발악',
+        defId: card.defId,
+        motion: 'last_struggle_slash',
+        isAoE: true,
+      });
+      room.pushEvent('log', { message: `⚔️ ${card.name}의 특수 스킬 [마지막 발악]이 발동되었습니다! (광역 100 데미지)` });
+      room.dealDamageAll({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, baseAmount: 100 });
     }
 
     // 부착 아이템: 사회 친화력 - 매턴 hp 10 회복

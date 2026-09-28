@@ -180,6 +180,8 @@ class GameRoom {
     }
 
     this.blockedThisTurn = keywordHandler.onTurnStart(this, player, opponent);
+    this._updatePartyPassives(player);
+    this._updatePartyPassives(opponent);
     this.checkWin();
   }
 
@@ -219,6 +221,18 @@ class GameRoom {
         sourceCard.setStack(STACK.DMG_UP, 0); // 공격 시전 후 소실
       }
 
+      // [활시위 당기기] 다음 주는 피해 +50%
+      if (sourceCard.hasStatus(STATUS.NEXT_DMG_BOOST_50)) {
+        amount = Math.floor(amount * 1.5);
+        sourceCard.removeStatus(STATUS.NEXT_DMG_BOOST_50);
+        this.pushEvent('log', { message: `🏹 ${sourceCard.name}의 [활시위 당기기]로 피해가 50% 증가했습니다!` });
+      }
+
+      // [선택 받은 용사] 주는 피해 +30
+      if (sourceCard.hasStatus(STATUS.CHOSEN_HERO)) {
+        amount += 30;
+      }
+
       // 부착 아이템: 학습력 - 주는 피해 +10
       for (const item of sourceCard.attachedItems || []) {
         if (item.defId === 'item_hakseupryeok') amount += 10;
@@ -228,8 +242,9 @@ class GameRoom {
         sourceCard.removeStatus(STATUS.HALVE_NEXT_DAMAGE_DEALT);
         this.pushEvent('log', { message: `${sourceCard.name}의 공격이 약화되어 있습니다.` });
       }
-      // 기사도 정신: 자신 필드에 몹이 1장뿐이면 주는 피해 2배
-      if (sourceCard.def.trait && sourceCard.def.trait.id === 'chivalry' && sourcePlayer.fieldMobs().length === 1) {
+      // 기사도 정신 / 내겐 고통 밖에 없습니다: 몹 1장이거나 [믿을 만한 동료] 보유 시 주는 피해 2배
+      const isChivalryAttacker = sourceCard.def.trait && (sourceCard.def.trait.id === 'chivalry' || sourceCard.def.trait.id === 'only_pain');
+      if (isChivalryAttacker && (sourcePlayer.fieldMobs().length === 1 || sourceCard.hasStatus(STATUS.TRUSTED_COMRADE))) {
         amount *= 2;
       }
     }
@@ -255,8 +270,9 @@ class GameRoom {
     if (targetCard.def.trait && targetCard.def.trait.id === 'yellow_belt') {
       amount = Math.floor(amount * 0.5);
     }
-    // 기사도 정신: 자신 필드에 몹이 1장뿐이면 받는 피해 절반
-    if (targetCard.def.trait && targetCard.def.trait.id === 'chivalry' && targetPlayer.fieldMobs().length === 1) {
+    // 기사도 정신 / 내겐 고통 밖에 없습니다: 몹 1장이거나 [믿을 만한 동료] 보유 시 받는 피해 절반
+    const isChivalryDefender = targetCard.def.trait && (targetCard.def.trait.id === 'chivalry' || targetCard.def.trait.id === 'only_pain');
+    if (isChivalryDefender && (targetPlayer.fieldMobs().length === 1 || targetCard.hasStatus(STATUS.TRUSTED_COMRADE))) {
       amount = Math.floor(amount * 0.5);
     }
     // 메카: 중국산 베터리 - 과충전 스택당 받는 피해 +10
@@ -300,10 +316,13 @@ class GameRoom {
       this._applyHp(targetPlayer, targetCard, dealtToTarget);
     }
 
-    // 생명흡수 트레잇 (연기력 / 아침 시간에 자습하자니까)
+    // 생명흡수 트레잇 (연기력 50% 버프 / 내겐 고통 밖에 없습니다 50% / 아침 시간에 자습하자니까 30%)
     if (sourceCard && sourceCard.def.trait) {
       const tid = sourceCard.def.trait.id;
-      if (tid === 'acting' || tid === 'self_study') {
+      if (tid === 'acting' || tid === 'only_pain') {
+        const healAmount = Math.floor(amount * 0.5);
+        if (healAmount > 0) this.heal(sourceCard, healAmount);
+      } else if (tid === 'self_study') {
         const healAmount = Math.floor(amount * 0.3);
         if (healAmount > 0) this.heal(sourceCard, healAmount);
       }
@@ -321,6 +340,54 @@ class GameRoom {
   }
 
   _applyHp(player, card, amount) {
+    if (!card || !card.alive) return;
+
+    // 1. [탈모 전장연] - [미련없는 인생]: [탈모] 부여 상태 시 치명상 피해를 받아도 HP 1 고정 & 특수 스킬 [임종] 광역 400 시전 후 사망
+    if (card.defId === 'card_talmo' && card.hasStatus(STATUS.TALMO) && !card.flags.imjongTriggered) {
+      if (card.hp - amount <= 0) {
+        card.hp = 1;
+        card.flags.imjongTriggered = true;
+        card.removeStatus(STATUS.TALMO);
+        this.pushEvent('damage', { instanceId: card.instanceId, amount, hpAfter: 1 });
+        this.pushEvent('log', {
+          message: `💥 [탈모 전장연] 특성 [미련없는 인생] 발동! HP가 1로 고정되고 특수 스킬 [임종]이 발동됩니다!`,
+        });
+        const opponent = this.getOpponent(player);
+        this.pushEvent('skillCast', {
+          sourceCardId: card.instanceId,
+          sourceCardName: card.name,
+          targetCardId: null,
+          targetCardName: '상대 필드 전원',
+          skillId: 'imjong',
+          skillName: '임종',
+          defId: 'card_talmo',
+          motion: 'imjong_blast',
+          isAoE: true,
+        });
+        this.dealDamageAll({ sourcePlayer: player, sourceCard: card, targetPlayer: opponent, baseAmount: 400 });
+        card.hp = 0;
+        card.alive = false;
+        this.checkDeath(card);
+        return;
+      }
+    }
+
+    // 2. [마지막 불씨]: 치명상을 입어도 HP 1로 생존, 다음 턴 [마지막 발악] 준비
+    const lastEmberStack = (card.getStack && card.getStack(STACK.LAST_EMBER)) || (card.flags && card.flags.lastEmber ? 1 : 0);
+    if (lastEmberStack > 0 && (card.hp - amount <= 0) && !card.flags.pendingLastStruggle) {
+      card.hp = 1;
+      if (card.setStack) card.setStack(STACK.LAST_EMBER, 0);
+      if (card.flags) {
+        card.flags.lastEmber = 0;
+        card.flags.pendingLastStruggle = true;
+      }
+      this.pushEvent('damage', { instanceId: card.instanceId, amount, hpAfter: 1 });
+      this.pushEvent('log', {
+        message: `🔥 [${card.name}]이(가) [마지막 불씨] 효과로 쓰러지지 않고 HP 1로 버텨냈습니다! 다음 턴 [마지막 발악]이 발동됩니다.`,
+      });
+      return;
+    }
+
     card.hp = Math.max(0, card.hp - amount);
     this.pushEvent('damage', { instanceId: card.instanceId, amount, hpAfter: card.hp });
     this.checkDeath(card);
@@ -370,6 +437,7 @@ class GameRoom {
           player.trash.push(card);
           this.pushEvent('death', { instanceId: card.instanceId, name: card.name });
           this.pushEvent('log', { message: `${card.name}이(가) 쓰러졌습니다.` });
+          this._updatePartyPassives(player);
         }
       }
       this.checkWin();
@@ -545,7 +613,75 @@ class GameRoom {
     player.removeFromHand(handInstanceId);
     player.field[slot] = card;
     this.pushEvent('log', { message: `${player.nickname}이(가) ${card.name}을(를) 필드에 배치했습니다.` });
+    this._updatePartyPassives(player);
     return { ok: true, events: this.flushEvents() };
+  }
+
+  _updatePartyPassives(player) {
+    if (!player) return;
+    const fieldMobs = player.fieldMobs();
+    const hasMage = fieldMobs.some(c => c.defId === 'card_mage');
+    const hasCleric = fieldMobs.some(c => c.defId === 'card_cleric');
+    const hasArcher = fieldMobs.some(c => c.defId === 'card_archer');
+
+    for (const mob of fieldMobs) {
+      if (mob.defId === 'card_gisa') {
+        if (hasMage && !mob.hasStatus(STATUS.ISEKAI_HERO)) {
+          mob.addStatus(STATUS.ISEKAI_HERO, {});
+          this.pushEvent('log', { message: `🧙‍♂️ [마법사 전장연] 패시브: [기사 전장연]에게 [이세계 용사] 상태를 부여했습니다.` });
+        }
+        if (hasCleric && !mob.hasStatus(STATUS.CHOSEN_HERO)) {
+          mob.addStatus(STATUS.CHOSEN_HERO, {});
+          mob.maxHp = 523;
+          mob.hp = Math.max(mob.hp, 523);
+          this.pushEvent('log', { message: `✨ [성직자 전장연] 패시브: [기사 전장연]에게 [선택 받은 용사]를 부여했습니다. (최대 HP 523 조정, 주는 피해 +30)` });
+        }
+        if (hasArcher && !mob.hasStatus(STATUS.TRUSTED_COMRADE)) {
+          mob.addStatus(STATUS.TRUSTED_COMRADE, {});
+          this.pushEvent('log', { message: `🏹 [궁수 전장연] 패시브: [기사 전장연]에게 [믿을 만한 동료]를 부여했습니다. (기사도 정신 상시 발동)` });
+        }
+      }
+    }
+
+    this._checkCorruptedHeroEvolution(player);
+  }
+
+  _checkCorruptedHeroEvolution(player) {
+    if (!player) return false;
+    const gisa = player.fieldMobs().find(c => c.defId === 'card_gisa' && c.hasStatus(STATUS.ISEKAI_HERO));
+    if (!gisa) return false;
+
+    const partyDefIds = ['card_archer', 'card_cleric', 'card_mage'];
+    const trashDefIds = player.trash.map(c => c.defId);
+    const allInTrash = partyDefIds.every(id => trashDefIds.includes(id));
+    if (!allInTrash) return false;
+
+    const inHand = player.hand.some(c => partyDefIds.includes(c.defId));
+    const inDeck = player.deck.some(c => partyDefIds.includes(c.defId));
+    if (inHand || inDeck) return false;
+
+    const def = ALL_DEFS['card_corrupted_hero'];
+    if (!def) return false;
+
+    gisa.defId = def.id;
+    gisa.def = def;
+    gisa.name = def.name;
+    gisa.maxHp = 523;
+    gisa.hp = 523;
+    gisa.addStack(STACK.LAST_EMBER, 1);
+    gisa.flags.lastEmber = 1;
+    gisa.addStatus(STATUS.TRUSTED_COMRADE, {});
+
+    this.pushEvent('specialEvolution', {
+      instanceId: gisa.instanceId,
+      name: gisa.name,
+      kind: 'corrupted_hero_summon',
+      videoUrl: '/image/dark_knight_spowon.mp4',
+    });
+    this.pushEvent('log', {
+      message: `💀 모든 동료를 잃은 [기사 전장연]이 분노하여 [모든 것을 잃어 타락해버린 이세계 용사 전장연]으로 각성 진화했습니다! (HP: 523, [마지막 불씨] 1스택 획득)`,
+    });
+    return true;
   }
 
   _canAwakenHuiRoAeRak(player, handCard) {

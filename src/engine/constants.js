@@ -1,4 +1,4 @@
-// 상태이상 (디버프형)
+// 상태이상 (디버프 및 버프 키워드)
 const STATUS = {
   CONFUSION: 'confusion', // 혼란
   BURN: 'burn',           // 화상
@@ -6,6 +6,11 @@ const STATUS = {
   FIXED_TARGET: 'fixedTarget', // 이 칠판 지우개를 봐 - 상대의 다음 공격 대상 고정
   HALVE_NEXT_DAMAGE_TAKEN: 'halveNextDamageTaken', // 하이퍼포커스
   HALVE_NEXT_DAMAGE_DEALT: 'halveNextDamageDealt', // 친한척하기 / 포효
+  TALMO: 'talmo',                                 // 탈모
+  TRUSTED_COMRADE: 'trusted_comrade',             // 믿을 만한 동료
+  CHOSEN_HERO: 'chosen_hero',                     // 선택 받은 용사
+  ISEKAI_HERO: 'isekai_hero',                     // 이세계 용사
+  NEXT_DMG_BOOST_50: 'next_dmg_boost_50',         // 활시위 당기기 (+50%)
 };
 
 // 스택형 키워드
@@ -15,6 +20,7 @@ const STACK = {
   SHIELD: 'shield',           // 보호막
   DMG_UP: 'dmgUp',            // 피해량 증가 (최대 10)
   DMG_DOWN: 'dmgDown',        // 받는 피해량 감소 (최대 10)
+  LAST_EMBER: 'last_ember',   // 마지막 불씨
 };
 
 const MAX_OVERCHARGE = 10;

@@ -139,6 +139,8 @@ async function runTest() {
   p1.clientSide.on('roomJoined', ({ code }) => { roomCode = code; });
   p1.clientSide.on('state', (s) => { p1State = s; });
   p2.clientSide.on('state', (s) => { p2State = s; });
+  p1.clientSide.on('errorMsg', ({ error }) => { console.log('⚠️ P1 errorMsg:', error); });
+  p2.clientSide.on('errorMsg', ({ error }) => { console.log('⚠️ P2 errorMsg:', error); });
   p1.clientSide.on('events', (evs) => {
     evs.filter(e => e.type === 'turnChange').forEach(e => turnChanges.push(e));
   });
@@ -184,13 +186,15 @@ async function runTest() {
   // 스킬 사용
   const myCard = getActiveState().me.field[0];
   const oppCard = getOppState().me.field[0];
-  const sk = myCard.skills[0];
+  const sk = (myCard.skills && myCard.skills.find(s => s.targetType !== 'passive')) || myCard.skills[0];
+  const targetOwner = sk.targetType === 'ally' ? 'self' : (sk.targetType === 'enemy' ? 'opponent' : undefined);
+  const targetInstanceId = sk.targetType === 'ally' ? myCard.instanceId : (sk.targetType === 'enemy' ? oppCard.instanceId : undefined);
 
   getActiveClient().emit('useSkill', {
     cardInstanceId: myCard.instanceId,
     skillId: sk.id,
-    targetOwner: 'opponent',
-    targetInstanceId: oppCard.instanceId
+    targetOwner,
+    targetInstanceId
   });
 
   await new Promise(r => setTimeout(r, 80));

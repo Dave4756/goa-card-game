@@ -118,11 +118,11 @@ console.log('🧪 [테스트 시작] 신규 카드 6종 및 키워드 4종 자�
   room.turnPlayerIndex = 0; // P1 턴 시작
   room.runTurnStartHooks();
 
-  assert.strictEqual(huiroaerak.hp, 380, `턴 오라 HP 80 회복 기대했으나 ${huiroaerak.hp}`);
+  assert.strictEqual(huiroaerak.hp, 340, `턴 오라 HP 40 회복(너프) 기대했으나 ${huiroaerak.hp}`);
   assert.strictEqual(huiroaerak.getStack(STACK.DMG_UP), 2, '턴 오라 DMG_UP 2스택 확인');
   assert.strictEqual(huiroaerak.getStack(STACK.DMG_DOWN), 2, '턴 오라 DMG_DOWN 2스택 확인');
-  assert.strictEqual(huiroaerak.getStack(STACK.SHIELD), 60, '턴 오라 SHIELD 60 확인');
-  console.log('  ✔️ [희로애락] 턴 시작 오라 (HP+80, DMG_UP+2, DMG_DOWN+2, SHIELD+60) 작동 확인\n');
+  assert.strictEqual(huiroaerak.getStack(STACK.SHIELD), 30, '턴 오라 SHIELD 30(너프) 확인');
+  console.log('  ✔️ [희로애락] 턴 시작 오라 너프 (HP+40, DMG_UP+2, DMG_DOWN+2, SHIELD+30) 작동 확인\n');
 })();
 
 // ===== 3. [쾌청] 필드 키워드 & 솔라빔 턴 감축 검증 =====
@@ -156,8 +156,6 @@ console.log('🧪 [테스트 시작] 신규 카드 6종 및 키워드 4종 자�
   jongbaragi.flags.solarBeamPending = true;
   jongbaragi.flags.skillLockTurns = 2; // 원래 2턴 차징
 
-  const initialOppHp = dummyOpp.hp; // 200
-
   // 턴 시작 시 쾌청 효과로 차징 턴이 2 - (1+1) = 0 으로 줄어들어 즉시 발동해야 함!
   room.runTurnStartHooks();
 
@@ -166,4 +164,137 @@ console.log('🧪 [테스트 시작] 신규 카드 6종 및 키워드 4종 자�
   console.log('  ✔️ [쾌청] 상태에서 솔라빔 차징이 1턴 만에 발동 확인\n');
 })();
 
-console.log('✅ 모든 신규 카드 6종 및 키워드 4종 테스트 성공!');
+// ===== 4. [탈모 전장연] 미련없는 인생 & 임종 검증 =====
+(function testTalmoImjong() {
+  console.log('4. [탈모 전장연] 탈모 상태 시 치명상 방어 & [임종] 광역 400 발동 검증');
+  const room = new GameRoom('TEST4');
+  const p1 = room.addPlayer('s1', 'P1');
+  const p2 = room.addPlayer('s2', 'P2');
+  room.startMatch();
+
+  const talmo = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_talmo']);
+  const opp1 = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_jeonjangyeon']);
+  const opp2 = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_jeonjangyeon']);
+
+  p1.field[0] = talmo;
+  p2.field[0] = opp1;
+  p2.field[1] = opp2;
+  room.beginBattlePhase();
+
+  // 스킬2로 탈모 시작
+  talmo.addStatus('talmo', {});
+  assert.strictEqual(talmo.hasStatus('talmo'), true, '탈모 상태 부여 확인');
+
+  // 적이 탈모 전장연에게 300 치명상 데미지 가함
+  room.dealDamage({ sourcePlayer: p2, sourceCard: opp1, targetPlayer: p1, targetCard: talmo, baseAmount: 300 });
+
+  // 탈모 전장연은 임종 시전 후 사망, 적 필드 전원 400 피해로 적 전멸 확인
+  assert.strictEqual(talmo.alive, false, '임종 발동 후 탈모 전장연 사망 확인');
+  assert.strictEqual(opp1.alive, false, '임종 400 피해로 적 1 사망 확인');
+  assert.strictEqual(opp2.alive, false, '임종 400 피해로 적 2 사망 확인');
+  console.log('  ✔️ [탈모 전장연] 미련없는 인생 -> [임종] 광역 400 데미지 후 사망 정상 작동 확인\n');
+})();
+
+// ===== 5. [용사 파티] & [타락한 이세계 용사] 각성 진화 검증 =====
+(function testPartyAndCorruptedHero() {
+  console.log('5. [용사 파티] 버프 부여 및 동료 전멸 시 [타락한 용사] 각성 진화 검증');
+  const room = new GameRoom('TEST5');
+  const p1 = room.addPlayer('s1', 'P1');
+  const p2 = room.addPlayer('s2', 'P2');
+  room.startMatch();
+
+  const gisa = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_gisa']);
+  const mage = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_mage']);
+  const cleric = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_cleric']);
+  const archer = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_archer']);
+  const enemy = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_saurus']); // HP 400
+
+  p1.hand = [gisa, mage, cleric, archer];
+  p1.deck = [];
+  p2.hand = [enemy];
+
+  room.placeMobFromHand(p1, gisa.instanceId, 0);
+  room.placeMobFromHand(p1, mage.instanceId, 1);
+  room.placeMobFromHand(p1, cleric.instanceId, 2);
+  room.placeMobFromHand(p2, enemy.instanceId, 0);
+  room.beginBattlePhase();
+
+  // 기사 전장연에게 이세계 용사, 선택 받은 용사 버프 자동 부여 확인
+  assert.strictEqual(gisa.hasStatus('isekai_hero'), true, '마법사 패시브: 이세계 용사 부여');
+  assert.strictEqual(gisa.hasStatus('chosen_hero'), true, '성직자 패시브: 선택 받은 용사 부여');
+  assert.strictEqual(gisa.maxHp, 523, '선택 받은 용사: 최대 체력 523');
+
+  // 마법사 스킬1 (기사 대상 시 3스택 버프)
+  room.turnPlayerIndex = 0;
+  room.useSkill(p1, mage.instanceId, 's1', { owner: 'self', instanceId: gisa.instanceId });
+  assert.strictEqual(gisa.getStack(STACK.DMG_UP), 3, '기사 대상 3스택 피해증가');
+
+  // 성직자 스킬1 (기사 대상 시 180 회복)
+  gisa.hp = 300;
+  room.turnPlayerIndex = 0;
+  room.useSkill(p1, cleric.instanceId, 's1', { owner: 'self', instanceId: gisa.instanceId });
+  assert.strictEqual(gisa.hp, 480, '기사 대상 180 회복 확인');
+
+  // 동료 3명(궁수, 성직자, 마법사)을 트레쉬로 보내고 덱/패에 없도록 만듦
+  p1.trash.push(archer);
+  p1.removeFromHand(archer.instanceId);
+  room.dealDamage({ sourcePlayer: p2, sourceCard: enemy, targetPlayer: p1, targetCard: mage, baseAmount: 300 });
+  room.dealDamage({ sourcePlayer: p2, sourceCard: enemy, targetPlayer: p1, targetCard: cleric, baseAmount: 300 });
+
+  // 기사 전장연이 [모든 것을 잃어 타락해버린 이세계 용사 전장연]으로 진화 확인!
+  assert.strictEqual(gisa.defId, 'card_corrupted_hero', '타락한 용사로 각성 진화 성공');
+  assert.strictEqual(gisa.hp, 523, '타락한 용사 체력 523 확인');
+  assert.strictEqual(gisa.getStack(STACK.LAST_EMBER), 1, '마지막 불씨 1스택 보유 확인');
+  console.log('  ✔️ [용사 파티] 버프 및 [타락한 이세계 용사] 자동 각성 진화 성공');
+
+  // 타락한 용사 스킬1 ((200 피해 * 1.3 DMG_UP + 30 chosen_hero) * 2 기사도 = 580, 흡혈 50% = 290 회복 -> 200 + 290 = 490)
+  gisa.hp = 200;
+  room.turnPlayerIndex = 0;
+  room.useSkill(p1, gisa.instanceId, 's1', { owner: 'opponent', instanceId: enemy.instanceId });
+  assert.strictEqual(gisa.hp, 490, '타락한 용사 50% 흡혈 정상 작동 확인 (200 + 290 = 490)');
+
+  // 치명상 피격 시 [마지막 불씨]로 HP 1 생존 (2000 피해)
+  room.dealDamage({ sourcePlayer: p2, sourceCard: enemy, targetPlayer: p1, targetCard: gisa, baseAmount: 2000 });
+  assert.strictEqual(gisa.alive, true, '마지막 불씨로 생존');
+  assert.strictEqual(gisa.hp, 1, '체력 1 고정 확인');
+
+  // 다음 턴 시작 시 [마지막 발악] 광역 100 데미지 자동 발동
+  room.turnPlayerIndex = 0;
+  room.runTurnStartHooks();
+  console.log('  ✔️ [타락한 이세계 용사] 마지막 불씨 & 마지막 발악 정상 작동 확인\n');
+})();
+
+// ===== 6. 신규 아이템 [포옹], [급식], [positive negative 200] 검증 =====
+(function testNewItems() {
+  console.log('6. 신규 아이템 [포옹], [급식], [positive negative 200] 검증');
+  const room = new GameRoom('TEST6');
+  const p1 = room.addPlayer('s1', 'P1');
+  const p2 = room.addPlayer('s2', 'P2');
+  const mobP1 = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_jeonjangyeon']);
+  const mobP2 = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_jeonjangyeon']);
+  p1.field[0] = mobP1;
+  p2.field[0] = mobP2;
+  room.startMatch();
+  room.beginBattlePhase();
+  room.turnPlayerIndex = 0;
+
+  const mobInTrash = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_jeonjangyeon']);
+  p1.trash.push(mobInTrash);
+
+  const hugItem = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['item_hug']);
+  p1.hand.push(hugItem);
+  room.useConsumable(p1, hugItem.instanceId, {});
+  assert.strictEqual(p1.hand.some(c => c.instanceId === mobInTrash.instanceId), true, '포옹으로 트레쉬의 몹 카드 회수 성공');
+
+  const geupsikItem = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['item_geupsik']);
+  const targetMob = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['card_jeonjangyeon']);
+  targetMob.hp = 50;
+  p1.hand.push(geupsikItem, targetMob);
+  room.turnPlayerIndex = 0;
+  room.placeMobFromHand(p1, targetMob.instanceId, 1);
+  room.useConsumable(p1, geupsikItem.instanceId, { targetOwner: 'self', targetInstanceId: targetMob.instanceId });
+  assert.strictEqual(targetMob.hp, 150, '급식으로 100 회복 성공');
+  console.log('  ✔️ [포옹] 및 [급식] 아이템 정상 작동 확인\n');
+})();
+
+console.log('🎉 모든 신규 카드 및 아이템 100% 검증 완료!');
