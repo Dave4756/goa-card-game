@@ -777,7 +777,21 @@ function showCorruptedHeroSummon(name, videoUrl) {
   if (videoUrl) video.src = videoUrl;
   overlay.style.display = 'flex';
   video.currentTime = 0;
-  video.play().catch(() => {});
+
+  // 브라우저 자동재생 정책: muted 상태에서는 autoplay 가능
+  // 상대방(소켓 수신)은 유저 인터랙션 없이 이벤트를 받으므로 muted 필수
+  video.muted = true;
+  const playPromise = video.play();
+  if (playPromise && playPromise.then) {
+    playPromise.then(() => {
+      // muted 재생 성공 → unmute 시도 (유저 인터랙션 컨텍스트면 성공)
+      try { video.muted = false; } catch(e) {}
+    }).catch(() => {
+      // 재생 자체 실패 시 fallback 텍스트 연출
+      closeCorruptedHeroVideo();
+      showSpecialEffect(name, 'corrupted_hero');
+    });
+  }
 
   // 화면 전체 강한 진동
   document.body.classList.add('screen-shake');
@@ -786,6 +800,13 @@ function showCorruptedHeroSummon(name, videoUrl) {
   video.onended = () => {
     closeCorruptedHeroVideo();
   };
+
+  // 안전장치: 영상이 어떤 이유로든 재생/종료되지 않을 경우 15초 후 강제 닫기
+  setTimeout(() => {
+    if (overlay.style.display !== 'none') {
+      closeCorruptedHeroVideo();
+    }
+  }, 15000);
 }
 
 function skipCorruptedHeroVideo() {
