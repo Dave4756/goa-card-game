@@ -325,8 +325,21 @@ const consumables = {
   item_ya_i_sibal: ({ room, player, payload }) => {
     const target = player.findOnField(payload?.targetInstanceId);
     if (!target) return { error: '대상을 지정해주세요.' };
-    target.statuses = {};
-    room.pushEvent('log', { message: `${target.name}의 모든 상태이상이 해제되었습니다.` });
+    const debuffKeys = [
+      STATUS.CONFUSION,
+      STATUS.BURN,
+      STATUS.SLEEP,
+      STATUS.FIXED_TARGET,
+      STATUS.HALVE_NEXT_DAMAGE_DEALT,
+    ];
+    let removedCount = 0;
+    for (const k of debuffKeys) {
+      if (target.hasStatus(k)) {
+        target.removeStatus(k);
+        removedCount++;
+      }
+    }
+    room.pushEvent('log', { message: `✨ ${target.name}의 모든 디버프(해로운 상태이상)가 해제되었습니다.` });
   },
   item_pos_neg: ({ room, player, opponent, payload }) => {
     const owner = payload?.targetOwner === 'opponent' ? opponent : player;

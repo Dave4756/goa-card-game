@@ -1,6 +1,6 @@
 const assert = require('assert');
 const { GameRoom, ALL_DEFS } = require('../src/engine/GameRoom');
-const { STACK, FIELD_KEYWORD, PHASE } = require('../src/engine/constants');
+const { STATUS, STACK, FIELD_KEYWORD, PHASE } = require('../src/engine/constants');
 
 console.log('🧪 [테스트 시작] 신규 카드 6종 및 키워드 4종 자동화 검증...\n');
 
@@ -224,24 +224,36 @@ console.log('🧪 [테스트 시작] 신규 카드 6종 및 키워드 4종 자�
   assert.strictEqual(gisa.hasStatus('chosen_hero'), true, '성직자 패시브: 선택 받은 용사 부여');
   assert.strictEqual(gisa.maxHp, 523, '선택 받은 용사: 최대 체력 523');
 
+  // 궁수 전장연도 배치하여 [믿을 만한 동료] 버프 획득 검증 (성직자 사망 후 슬롯에 궁수 배치)
+  room.dealDamage({ sourcePlayer: p2, sourceCard: enemy, targetPlayer: p1, targetCard: cleric, baseAmount: 300 });
+  room.turnPlayerIndex = 0;
+  room.placeMobFromHand(p1, archer.instanceId, 2);
+  assert.strictEqual(gisa.hasStatus('trusted_comrade'), true, '궁수 패시브: 믿을 만한 동료 부여');
+
+  // 디버프(혼란, 화상) 부여 후 [야 이 시발] 사용 시 버프는 유지되고 디버프만 제거되는지 검증
+  gisa.addStatus(STATUS.CONFUSION, {});
+  gisa.addStatus(STATUS.BURN, {});
+  const sibaItem = new (require('../src/engine/CardInstance').CardInstance)(ALL_DEFS['item_ya_i_sibal']);
+  p1.hand.push(sibaItem);
+  room.turnPlayerIndex = 0;
+  room.useConsumable(p1, sibaItem.instanceId, { targetOwner: 'self', targetInstanceId: gisa.instanceId });
+  assert.strictEqual(gisa.hasStatus(STATUS.CONFUSION), false, '혼란 디버프 제거');
+  assert.strictEqual(gisa.hasStatus(STATUS.BURN), false, '화상 디버프 제거');
+  assert.strictEqual(gisa.hasStatus('isekai_hero'), true, '이세계 용사 버프는 유지');
+  assert.strictEqual(gisa.hasStatus('chosen_hero'), true, '선택 받은 용사 버프는 유지');
+  assert.strictEqual(gisa.hasStatus('trusted_comrade'), true, '믿을 만한 동료 버프는 유지');
+  console.log('  ✔️ [야 이 시발] 디버프만 해제되고 버프 유지 확인');
+
   // 마법사 스킬1 (기사 대상 시 3스택 버프)
   room.turnPlayerIndex = 0;
   room.useSkill(p1, mage.instanceId, 's1', { owner: 'self', instanceId: gisa.instanceId });
   assert.strictEqual(gisa.getStack(STACK.DMG_UP), 3, '기사 대상 3스택 피해증가');
 
-  // 성직자 스킬1 (기사 대상 시 180 회복)
-  gisa.hp = 300;
-  room.turnPlayerIndex = 0;
-  room.useSkill(p1, cleric.instanceId, 's1', { owner: 'self', instanceId: gisa.instanceId });
-  assert.strictEqual(gisa.hp, 480, '기사 대상 180 회복 확인');
-
-  // 동료 3명(궁수, 성직자, 마법사)을 트레쉬로 보내고 덱/패에 없도록 만듦
-  p1.trash.push(archer);
-  p1.removeFromHand(archer.instanceId);
+  // 남은 동료(마법사, 궁수)가 모두 쓰러져 트레쉬로 이동
   room.dealDamage({ sourcePlayer: p2, sourceCard: enemy, targetPlayer: p1, targetCard: mage, baseAmount: 300 });
-  room.dealDamage({ sourcePlayer: p2, sourceCard: enemy, targetPlayer: p1, targetCard: cleric, baseAmount: 300 });
+  room.dealDamage({ sourcePlayer: p2, sourceCard: enemy, targetPlayer: p1, targetCard: archer, baseAmount: 300 });
 
-  // 기사 전장연이 [모든 것을 잃어 타락해버린 이세계 용사 전장연]으로 진화 확인!
+  // 3가지 버프를 모두 받은 기사 전장연이 [모든 것을 잃어 타락해버린 이세계 용사 전장연]으로 진화 확인!
   assert.strictEqual(gisa.defId, 'card_corrupted_hero', '타락한 용사로 각성 진화 성공');
   assert.strictEqual(gisa.hp, 523, '타락한 용사 체력 523 확인');
   assert.strictEqual(gisa.getStack(STACK.LAST_EMBER), 1, '마지막 불씨 1스택 보유 확인');

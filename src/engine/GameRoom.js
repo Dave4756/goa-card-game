@@ -648,7 +648,12 @@ class GameRoom {
 
   _checkCorruptedHeroEvolution(player) {
     if (!player) return false;
-    const gisa = player.fieldMobs().find(c => c.defId === 'card_gisa' && c.hasStatus(STATUS.ISEKAI_HERO));
+    const gisa = player.fieldMobs().find(c =>
+      c.defId === 'card_gisa' &&
+      c.hasStatus(STATUS.ISEKAI_HERO) &&
+      c.hasStatus(STATUS.CHOSEN_HERO) &&
+      c.hasStatus(STATUS.TRUSTED_COMRADE)
+    );
     if (!gisa) return false;
 
     const partyDefIds = ['card_archer', 'card_cleric', 'card_mage'];
@@ -656,9 +661,9 @@ class GameRoom {
     const allInTrash = partyDefIds.every(id => trashDefIds.includes(id));
     if (!allInTrash) return false;
 
-    const inHand = player.hand.some(c => partyDefIds.includes(c.defId));
-    const inDeck = player.deck.some(c => partyDefIds.includes(c.defId));
-    if (inHand || inDeck) return false;
+    // 필드에 아직 살아있는 용사 파티원이 없어야 함
+    const fieldDefIds = player.fieldMobs().map(c => c.defId);
+    if (partyDefIds.some(id => fieldDefIds.includes(id))) return false;
 
     const def = ALL_DEFS['card_corrupted_hero'];
     if (!def) return false;
@@ -679,7 +684,7 @@ class GameRoom {
       videoUrl: '/image/dark_knight_spowon.mp4',
     });
     this.pushEvent('log', {
-      message: `💀 모든 동료를 잃은 [기사 전장연]이 분노하여 [모든 것을 잃어 타락해버린 이세계 용사 전장연]으로 각성 진화했습니다! (HP: 523, [마지막 불씨] 1스택 획득)`,
+      message: `💀 자신에게 버프를 부여한 모든 동료(마법사, 성직자, 궁수)를 잃은 [기사 전장연]이 분노하여 [모든 것을 잃어 타락해버린 이세계 용사 전장연]으로 각성 진화했습니다! (HP: 523, [마지막 불씨] 1스택 획득)`,
     });
     return true;
   }
